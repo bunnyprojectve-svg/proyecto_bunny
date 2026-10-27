@@ -4,10 +4,6 @@ const nextConfig = {
     // Ignora errores de TypeScript en la compilación
     ignoreBuildErrors: true,
   },
-  eslint: {
-    // Ignora advertencias de ESLint en la compilación
-    ignoreDuringBuilds: true,
-  },
   webpack: (config, { isServer }) => {
     if (!isServer) {
       // Evita que Webpack intente resolver módulos nativos de Node en el cliente
