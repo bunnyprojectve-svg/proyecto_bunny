@@ -1,0 +1,17 @@
+# Archivos de entorno y credenciales
+.env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Dependencias y carpetas de compilación
+/dist
+.pnp
+.pnp.js
+# node_modules/
+# .next/
+node_modules/
+.env*
+.next/
