@@ -9,7 +9,6 @@ interface Props {
 }
 
 export default async function ArtistaPerfilPage({ params }: Props) {
-  // En las versiones recientes de Next.js, params es una promesa y debe resolverse con await
   const resolvedParams = await params;
   const { slug } = resolvedParams;
 
@@ -55,9 +54,13 @@ export default async function ArtistaPerfilPage({ params }: Props) {
             <h2 className="text-xl font-semibold mb-4 text-zinc-300">Packs Disponibles</h2>
             <div className="bg-zinc-950 p-6 rounded-xl border border-zinc-800 text-center">
               <p className="text-zinc-400 mb-4">Inicia sesión o suscríbete para acceder al contenido exclusivo de {artista.nombre}.</p>
-              <button className="bg-rose-600 hover:bg-rose-700 text-white font-semibold px-6 py-2.5 rounded-lg transition">
+              
+              <Link 
+                href={`/checkout?artista=${artista.slug}`}
+                className="inline-block bg-rose-600 hover:bg-rose-700 text-white font-semibold px-6 py-2.5 rounded-lg transition"
+              >
                 Desbloquear Suscripción
-              </button>
+              </Link>
             </div>
           </div>
         </div>
