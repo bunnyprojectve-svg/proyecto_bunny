@@ -1,6 +1,8 @@
+'use client';
+
+import { useEffect, useState, use } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
 
 interface Props {
   params: Promise<{
@@ -8,23 +10,53 @@ interface Props {
   }>;
 }
 
-export default async function ArtistaPerfilPage({ params }: Props) {
-  const resolvedParams = await params;
+export default function ArtistaPerfilPage({ params }: Props) {
+  const resolvedParams = use(params);
   const { slug } = resolvedParams;
 
-  // Consultar los datos del artista usando el slug de la URL
-  const { data: artista, error } = await supabase
-    .from('artistas')
-    .select('*')
-    .eq('slug', slug)
-    .single();
+  const [artista, setArtista] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [mostrarModalPago, setMostrarModalPago] = useState(false);
+  const [metodoSeleccionado, setMetodoSeleccionado] = useState<string | null>(null);
 
-  if (error || !artista) {
-    notFound();
+  useEffect(() => {
+    async function obtenerArtista() {
+      const { data, error } = await supabase
+        .from('artistas')
+        .select('*')
+        .eq('slug', slug)
+        .single();
+
+      if (!error && data) {
+        setArtista(data);
+      }
+      setLoading(false);
+    }
+
+    obtenerArtista();
+  }, [slug]);
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
+        <p className="text-zinc-400 animate-pulse">Cargando perfil...</p>
+      </main>
+    );
+  }
+
+  if (!artista) {
+    return (
+      <main className="min-h-screen bg-zinc-950 text-white p-8 text-center">
+        <h1 className="text-2xl font-bold mb-4">Artista no encontrada</h1>
+        <Link href="/" className="text-rose-500 hover:underline">
+          ← Volver al Catálogo
+        </Link>
+      </main>
+    );
   }
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-white p-4 sm:p-8">
+    <main className="min-h-screen bg-zinc-950 text-white p-4 sm:p-8 relative">
       <div className="max-w-4xl mx-auto">
         <Link 
           href="/" 
@@ -34,6 +66,7 @@ export default async function ArtistaPerfilPage({ params }: Props) {
         </Link>
 
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl">
+          {/* Foto de portada */}
           <div className="h-80 bg-zinc-800 relative">
             <img 
               src={artista.foto_portada || '/placeholder.jpg'} 
@@ -51,20 +84,142 @@ export default async function ArtistaPerfilPage({ params }: Props) {
               {artista.biografia || 'Sin biografía disponible.'}
             </p>
 
+            {/* Sección de Packs Disponibles */}
             <h2 className="text-xl font-semibold mb-4 text-zinc-300">Packs Disponibles</h2>
-            <div className="bg-zinc-950 p-6 rounded-xl border border-zinc-800 text-center">
-              <p className="text-zinc-400 mb-4">Inicia sesión o suscríbete para acceder al contenido exclusivo de {artista.nombre}.</p>
-              
-              <Link 
-                href={`/checkout?artista=${artista.slug}`}
-                className="inline-block bg-rose-600 hover:bg-rose-700 text-white font-semibold px-6 py-2.5 rounded-lg transition"
-              >
-                Desbloquear Suscripción
-              </Link>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div className="bg-zinc-950 border border-zinc-800 p-5 rounded-xl flex flex-col justify-between">
+                <div>
+                  <span className="text-xs bg-rose-950 text-rose-300 border border-rose-800 px-2.5 py-1 rounded-full uppercase font-bold tracking-wide">
+                    VIP Pass
+                  </span>
+                  <h3 className="text-lg font-bold mt-3 mb-1">Pack Exclusivo Fotos & Videos</h3>
+                  <p className="text-zinc-400 text-sm mb-4">Acceso ilimitado al contenido multimedia del mes.</p>
+                </div>
+                <div className="flex items-center justify-between mt-2 pt-3 border-t border-zinc-800">
+                  <span className="text-xl font-bold text-white">$19.99 / mes</span>
+                  <button 
+                    onClick={() => setMostrarModalPago(true)}
+                    className="bg-rose-600 hover:bg-rose-700 text-white font-semibold px-4 py-2 rounded-lg transition text-sm"
+                  >
+                    Desbloquear
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-zinc-950 border border-zinc-800 p-5 rounded-xl flex flex-col justify-between opacity-80">
+                <div>
+                  <span className="text-xs bg-zinc-800 text-zinc-300 px-2.5 py-1 rounded-full uppercase font-bold tracking-wide">
+                    Premium
+                  </span>
+                  <h3 className="text-lg font-bold mt-3 mb-1">Suscripción Anual</h3>
+                  <p className="text-zinc-400 text-sm mb-4">Acceso total a todos los lanzamientos por 12 meses.</p>
+                </div>
+                <div className="flex items-center justify-between mt-2 pt-3 border-t border-zinc-800">
+                  <span className="text-xl font-bold text-white">$149.99 / año</span>
+                  <button 
+                    onClick={() => setMostrarModalPago(true)}
+                    className="bg-rose-600 hover:bg-rose-700 text-white font-semibold px-4 py-2 rounded-lg transition text-sm"
+                  >
+                    Desbloquear
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* MODAL EMERGENTE DE PASARELA DE PAGO */}
+      {mostrarModalPago && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+            {/* Botón de cerrar (X) */}
+            <button 
+              onClick={() => {
+                setMostrarModalPago(false);
+                setMetodoSeleccionado(null);
+              }}
+              className="absolute top-4 right-4 text-zinc-400 hover:text-white text-xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-zinc-800 transition"
+            >
+              ✕
+            </button>
+
+            <h3 className="text-2xl font-bold mb-2 text-center">Pasarela de Pago</h3>
+            <p className="text-zinc-400 text-sm text-center mb-6">
+              Selecciona tu método preferido para desbloquear el contenido de <strong className="text-white">{artista.nombre}</strong>.
+            </p>
+
+            {/* Opciones de Pasarelas de Pago */}
+            <div className="space-y-3 mb-6">
+              <button
+                onClick={() => setMetodoSeleccionado('binance')}
+                className={`w-full flex items-center justify-between p-4 rounded-xl border transition ${
+                  metodoSeleccionado === 'binance' 
+                    ? 'border-yellow-500 bg-yellow-500/10 text-white' 
+                    : 'border-zinc-800 bg-zinc-950 text-zinc-300 hover:border-zinc-700'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-yellow-500 font-bold text-lg">🟡</span>
+                  <span className="font-medium">BinancePay (Cripto)</span>
+                </div>
+                {metodoSeleccionado === 'binance' && <span className="text-xs bg-yellow-500 text-black px-2 py-0.5 rounded font-bold">Seleccionado</span>}
+              </button>
+
+              <button
+                onClick={() => setMetodoSeleccionado('nowpayments')}
+                className={`w-full flex items-center justify-between p-4 rounded-xl border transition ${
+                  metodoSeleccionado === 'nowpayments' 
+                    ? 'border-blue-500 bg-blue-500/10 text-white' 
+                    : 'border-zinc-800 bg-zinc-950 text-zinc-300 hover:border-zinc-700'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-blue-400 font-bold text-lg">🔷</span>
+                  <span className="font-medium">NOWPayments (USDT/BTC)</span>
+                </div>
+                {metodoSeleccionado === 'nowpayments' && <span className="text-xs bg-blue-500 text-white px-2 py-0.5 rounded font-bold">Seleccionado</span>}
+              </button>
+
+              <button
+                onClick={() => setMetodoSeleccionado('ccbill')}
+                className={`w-full flex items-center justify-between p-4 rounded-xl border transition ${
+                  metodoSeleccionado === 'ccbill' 
+                    ? 'border-rose-500 bg-rose-500/10 text-white' 
+                    : 'border-zinc-800 bg-zinc-950 text-zinc-300 hover:border-zinc-700'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-rose-500 font-bold text-lg">💳</span>
+                  <span className="font-medium">Tarjeta de Crédito (CCBill)</span>
+                </div>
+                {metodoSeleccionado === 'ccbill' && <span className="text-xs bg-rose-500 text-white px-2 py-0.5 rounded font-bold">Seleccionado</span>}
+              </button>
+            </div>
+
+            {/* Acciones del Modal */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setMostrarModalPago(false);
+                  setMetodoSeleccionado(null);
+                }}
+                className="w-1/2 py-2.5 rounded-lg border border-zinc-700 text-zinc-300 hover:bg-zinc-800 font-medium transition"
+              >
+                Cancelar
+              </button>
+
+              <button
+                disabled={!metodoSeleccionado}
+                onClick={() => alert(`Procesando pago con ${metodoSeleccionado?.toUpperCase()}`)}
+                className="w-1/2 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:hover:bg-rose-600 text-white font-semibold transition"
+              >
+                Pagar Ahora
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
