@@ -3,13 +3,15 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 interface Props {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 export default async function ArtistaPerfilPage({ params }: Props) {
-  const { slug } = params;
+  // En las versiones recientes de Next.js, params es una promesa y debe resolverse con await
+  const resolvedParams = await params;
+  const { slug } = resolvedParams;
 
   // Consultar los datos del artista usando el slug de la URL
   const { data: artista, error } = await supabase
