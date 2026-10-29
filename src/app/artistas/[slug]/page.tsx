@@ -20,7 +20,8 @@ export default function ArtistaPerfilPage({ params }: Props) {
   const [metodoSeleccionado, setMetodoSeleccionado] = useState<string | null>(null);
 
   useEffect(() => {
-    async function obtenerArtista() {
+    async function obtenerArtistaYRegistrarVisita() {
+      // 1. Obtener la información de la artista
       const { data, error } = await supabase
         .from('artistas')
         .select('*')
@@ -29,12 +30,48 @@ export default function ArtistaPerfilPage({ params }: Props) {
 
       if (!error && data) {
         setArtista(data);
+
+        // 2. Registrar el evento de tráfico en la tabla perfil_visitas
+        const { data: authData } = await supabase.auth.getUser();
+        await supabase.from('perfil_visitas').insert([
+          {
+            artista_slug: slug,
+            usuario_id: authData?.user?.id || null, // NULL si es un visitante no autenticado
+          },
+        ]);
       }
       setLoading(false);
     }
 
-    obtenerArtista();
+    if (slug) {
+      obtenerArtistaYRegistrarVisita();
+    }
   }, [slug]);
+
+  // Manejador del flujo de pago según la pasarela elegida
+  const handleProcesarPago = () => {
+    if (!metodoSeleccionado || !artista) return;
+
+    if (metodoSeleccionado === 'ccbill') {
+      // Configuración de FlexForm de CCBill
+      const clientAccnum = "900000";  // Tu número de cuenta CCBill
+      const clientSubacc = "0000";    // Tu subcuenta CCBill
+      const formName = "70cc";        // ID de tu FlexForm
+
+      const ccbillUrl = new URL(`https://bill.ccbill.com/jpost/signup.cgi`);
+      ccbillUrl.searchParams.append('clientAccnum', clientAccnum);
+      ccbillUrl.searchParams.append('clientSubacc', clientSubacc);
+      ccbillUrl.searchParams.append('formName', formName);
+      ccbillUrl.searchParams.append('customUserSlug', artista.slug);
+
+      // Redirigir al formulario seguro de pago de CCBill
+      window.location.href = ccbillUrl.toString();
+    } else if (metodoSeleccionado === 'binance') {
+      alert(`Iniciando checkout con BinancePay para ${artista.nombre}...`);
+    } else if (metodoSeleccionado === 'nowpayments') {
+      alert(`Iniciando checkout con NOWPayments para ${artista.nombre}...`);
+    }
+  };
 
   if (loading) {
     return (
@@ -66,7 +103,7 @@ export default function ArtistaPerfilPage({ params }: Props) {
         </Link>
 
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl">
-          {/* Foto de portada */}
+          {/* Foto Principal / Portada */}
           <div className="h-80 bg-zinc-800 relative">
             <img 
               src={artista.foto_portada || '/placeholder.jpg'} 
@@ -84,9 +121,27 @@ export default function ArtistaPerfilPage({ params }: Props) {
               {artista.biografia || 'Sin biografía disponible.'}
             </p>
 
+            {/* Galería de Fotos Adicionales */}
+            {artista.fotos_galeria && artista.fotos_galeria.length > 0 && (
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold mb-3 text-zinc-300">Galería Destacada</h2>
+                <div className="grid grid-cols-3 gap-3">
+                  {artista.fotos_galeria.map((fotoUrl: string, idx: number) => (
+                    <div key={idx} className="h-36 sm:h-48 bg-zinc-800 rounded-xl overflow-hidden border border-zinc-800">
+                      <img 
+                        src={fotoUrl} 
+                        alt={`Galería ${idx + 1}`} 
+                        className="w-full h-full object-cover hover:scale-105 transition duration-300"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Sección de Packs Disponibles */}
             <h2 className="text-xl font-semibold mb-4 text-zinc-300">Packs Disponibles</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
               <div className="bg-zinc-950 border border-zinc-800 p-5 rounded-xl flex flex-col justify-between">
                 <div>
                   <span className="text-xs bg-rose-950 text-rose-300 border border-rose-800 px-2.5 py-1 rounded-full uppercase font-bold tracking-wide">
@@ -106,7 +161,7 @@ export default function ArtistaPerfilPage({ params }: Props) {
                 </div>
               </div>
 
-              <div className="bg-zinc-950 border border-zinc-800 p-5 rounded-xl flex flex-col justify-between opacity-80">
+              <div className="bg-zinc-950 border border-zinc-800 p-5 rounded-xl flex flex-col justify-between opacity-90">
                 <div>
                   <span className="text-xs bg-zinc-800 text-zinc-300 px-2.5 py-1 rounded-full uppercase font-bold tracking-wide">
                     Premium
@@ -129,11 +184,10 @@ export default function ArtistaPerfilPage({ params }: Props) {
         </div>
       </div>
 
-      {/* MODAL EMERGENTE DE PASARELA DE PAGO */}
+      {/* VENTANA MODAL DE PASARELA DE PAGO */}
       {mostrarModalPago && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative animate-in fade-in zoom-in duration-200">
-            {/* Botón de cerrar (X) */}
             <button 
               onClick={() => {
                 setMostrarModalPago(false);
@@ -149,8 +203,22 @@ export default function ArtistaPerfilPage({ params }: Props) {
               Selecciona tu método preferido para desbloquear el contenido de <strong className="text-white">{artista.nombre}</strong>.
             </p>
 
-            {/* Opciones de Pasarelas de Pago */}
             <div className="space-y-3 mb-6">
+              <button
+                onClick={() => setMetodoSeleccionado('ccbill')}
+                className={`w-full flex items-center justify-between p-4 rounded-xl border transition ${
+                  metodoSeleccionado === 'ccbill' 
+                    ? 'border-rose-500 bg-rose-500/10 text-white' 
+                    : 'border-zinc-800 bg-zinc-950 text-zinc-300 hover:border-zinc-700'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-rose-500 font-bold text-lg">💳</span>
+                  <span className="font-medium">Tarjeta de Crédito (CCBill)</span>
+                </div>
+                {metodoSeleccionado === 'ccbill' && <span className="text-xs bg-rose-500 text-white px-2 py-0.5 rounded font-bold">Seleccionado</span>}
+              </button>
+
               <button
                 onClick={() => setMetodoSeleccionado('binance')}
                 className={`w-full flex items-center justify-between p-4 rounded-xl border transition ${
@@ -180,24 +248,8 @@ export default function ArtistaPerfilPage({ params }: Props) {
                 </div>
                 {metodoSeleccionado === 'nowpayments' && <span className="text-xs bg-blue-500 text-white px-2 py-0.5 rounded font-bold">Seleccionado</span>}
               </button>
-
-              <button
-                onClick={() => setMetodoSeleccionado('ccbill')}
-                className={`w-full flex items-center justify-between p-4 rounded-xl border transition ${
-                  metodoSeleccionado === 'ccbill' 
-                    ? 'border-rose-500 bg-rose-500/10 text-white' 
-                    : 'border-zinc-800 bg-zinc-950 text-zinc-300 hover:border-zinc-700'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-rose-500 font-bold text-lg">💳</span>
-                  <span className="font-medium">Tarjeta de Crédito (CCBill)</span>
-                </div>
-                {metodoSeleccionado === 'ccbill' && <span className="text-xs bg-rose-500 text-white px-2 py-0.5 rounded font-bold">Seleccionado</span>}
-              </button>
             </div>
 
-            {/* Acciones del Modal */}
             <div className="flex gap-3">
               <button
                 onClick={() => {
@@ -211,7 +263,7 @@ export default function ArtistaPerfilPage({ params }: Props) {
 
               <button
                 disabled={!metodoSeleccionado}
-                onClick={() => alert(`Procesando pago con ${metodoSeleccionado?.toUpperCase()}`)}
+                onClick={handleProcesarPago}
                 className="w-1/2 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:hover:bg-rose-600 text-white font-semibold transition"
               >
                 Pagar Ahora
