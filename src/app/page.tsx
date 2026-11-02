@@ -1,4 +1,4 @@
-'client' // (Nota: usar 'use client' en producción)
+'use client' // (Nota: usar 'use client' en producción)
 import { useState } from 'react'
 import Link from 'next/link'
 
