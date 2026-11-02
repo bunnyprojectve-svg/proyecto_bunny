@@ -1,25 +1,67 @@
-'use client' // (Nota: usar 'use client' en producción)
+'use client'
+
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabaseClient'
 import Link from 'next/link'
 
 export default function LandingPage() {
+  const router = useRouter()
   const [showLoginModal, setShowLoginModal] = useState(false)
+  
+  // Estados para capturar los datos del formulario
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
+
+  // Función real de inicio de sesión y redirección por rol
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setErrorMsg('')
+    setLoading(true)
+
+    try {
+      // 1. Autenticar con Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (authError) throw authError
+      const userId = authData.user?.id
+      if (!userId) throw new Error('No se pudo autenticar el usuario.')
+
+      // 2. Consultar el rol del usuario en la tabla 'profiles'
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .single()
+
+      if (profileError) throw profileError
+      const role = profile?.role
+
+      // 3. Redirección automática según el rol asignado
+      if (role === 'admin' || role === 'developer' || role === 'supervisor') {
+        router.push('/admin')
+      } else if (role === 'talent') {
+        router.push('/talent/dashboard')
+      } else {
+        router.push('/catalogo') // Redirige al catálogo si es usuario normal
+      }
+
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Error al iniciar sesión. Revisa tus credenciales.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <main className="min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center p-6 text-center">
-      {/* Banner Superior Prediseñado */}
-      <div className="w-full max-w-4xl bg-gradient-to-r from-red-950 via-zinc-900 to-red-950 border border-red-600/40 p-4 rounded-2xl mb-8 shadow-2xl flex items-center justify-between">
-        <h1 className="text-2xl font-black text-red-500 tracking-wider">BUNNY</h1>
-        <p className="text-xs text-zinc-300 hidden sm:block">Plataforma Exclusiva de Contenido y Entretenimiento (+18)</p>
-        <button
-          onClick={() => setShowLoginModal(true)}
-          className="bg-red-600 hover:bg-red-700 text-white font-bold px-5 py-2 rounded-xl text-xs transition cursor-pointer"
-        >
-          Iniciar Sesión
-        </button>
-      </div>
-
-      {/* Contenido de Presentación */}
+      
+      {/* Contenido de Presentación de la Landing Page */}
       <div className="max-w-2xl mx-auto space-y-6">
         <h2 className="text-4xl sm:text-5xl font-black tracking-tight">
           Contenido Exclusivo y Conexiones en Vivo
@@ -43,9 +85,9 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* Modal Emergente de Login */}
+      {/* Modal Emergente de Login con Supabase Integrado */}
       {showLoginModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/9oid p-4 backdrop-blur-md">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-md">
           <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-white shadow-2xl relative">
             <button
               onClick={() => setShowLoginModal(false)}
@@ -55,18 +97,42 @@ export default function LandingPage() {
             </button>
             <h3 className="text-xl font-bold mb-2 text-red-500">Iniciar Sesión en BUNNY</h3>
             <p className="text-xs text-zinc-400 mb-6">Ingresa tus credenciales para explorar el catálogo o tu panel.</p>
-            {/* Aquí puedes incrustar el formulario de login o redireccionar tras autenticar */}
-            <form onSubmit={(e) => { e.preventDefault(); alert('Redirigiendo según rol...'); }} className="space-y-4 text-left">
+            
+            {errorMsg && (
+              <div className="bg-red-950/80 border border-red-600 text-red-200 p-3 rounded-xl mb-4 text-xs text-left">
+                {errorMsg}
+              </div>
+            )}
+
+            <form onSubmit={handleLogin} className="space-y-4 text-left">
               <div>
                 <label className="block text-xs font-semibold text-zinc-300 uppercase mb-1">Correo Electrónico</label>
-                <input type="email" required placeholder="tu@correo.com" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-red-600" />
+                <input 
+                  type="email" 
+                  required 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="tu@correo.com" 
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-red-600" 
+                />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-zinc-300 uppercase mb-1">Contraseña</label>
-                <input type="password" required placeholder="••••••••" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-red-600" />
+                <input 
+                  type="password" 
+                  required 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••" 
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-red-600" 
+                />
               </div>
-              <button type="submit" className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl transition text-sm cursor-pointer">
-                Entrar al Sistema
+              <button 
+                type="submit" 
+                disabled={loading}
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl transition text-sm cursor-pointer disabled:opacity-50"
+              >
+                {loading ? 'Autenticando...' : 'Entrar al Sistema'}
               </button>
             </form>
           </div>
