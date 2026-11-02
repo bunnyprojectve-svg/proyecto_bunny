@@ -1,61 +1,77 @@
-import { supabase } from '@/lib/supabaseClient';
-import Link from 'next/link';
-import StarRating from '@/components/StarRating';
+'client' // (Nota: usar 'use client' en producción)
+import { useState } from 'react'
+import Link from 'next/link'
 
-export default async function HomeCatalogPage() {
-  const { data: artistas, error } = await supabase
-    .from('artistas')
-    .select('id, nombre, slug, foto_portada, biografia, puntuacion')
-    .order('puntuacion', { ascending: false });
-
-  if (error) {
-    console.error('Error cargando el catálogo de talentos:', error);
-  }
+export default function LandingPage() {
+  const [showLoginModal, setShowLoginModal] = useState(false)
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-white p-4 sm:p-8">
-      <div className="bg-red-950/40 border border-red-600/50 p-4 rounded-lg mb-8 text-center text-sm text-red-200">
-        ⚠️ **Aviso Legal:** Contenido exclusivo para adultos (+18). Al navegar en este sitio, confirmas ser mayor de edad.
+    <main className="min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center p-6 text-center">
+      {/* Banner Superior Prediseñado */}
+      <div className="w-full max-w-4xl bg-gradient-to-r from-red-950 via-zinc-900 to-red-950 border border-red-600/40 p-4 rounded-2xl mb-8 shadow-2xl flex items-center justify-between">
+        <h1 className="text-2xl font-black text-red-500 tracking-wider">BUNNY</h1>
+        <p className="text-xs text-zinc-300 hidden sm:block">Plataforma Exclusiva de Contenido y Entretenimiento (+18)</p>
+        <button
+          onClick={() => setShowLoginModal(true)}
+          className="bg-red-600 hover:bg-red-700 text-white font-bold px-5 py-2 rounded-xl text-xs transition cursor-pointer"
+        >
+          Iniciar Sesión
+        </button>
       </div>
 
-      <h1 className="text-3xl font-bold mb-6 text-center">Catálogo de Talentos Exclusivos</h1>
+      {/* Contenido de Presentación */}
+      <div className="max-w-2xl mx-auto space-y-6">
+        <h2 className="text-4xl sm:text-5xl font-black tracking-tight">
+          Contenido Exclusivo y Conexiones en Vivo
+        </h2>
+        <p className="text-zinc-400 text-sm sm:text-base leading-relaxed">
+          Descubre los perfiles de nuestros talentos verificados, adquiere packs exclusivos con vigencia de 30 días y disfruta de transmisiones en streaming de alta calidad.
+        </p>
+        <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
+          <button
+            onClick={() => setShowLoginModal(true)}
+            className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-xl transition text-sm cursor-pointer shadow-lg shadow-red-900/30"
+          >
+            Acceder a la Plataforma
+          </button>
+          <Link
+            href="/auth/registro-usuario"
+            className="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 font-medium py-3 px-8 rounded-xl border border-zinc-800 transition text-sm flex items-center justify-center"
+          >
+            Registrarse como Usuario
+          </Link>
+        </div>
+      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-        {artistas && artistas.length > 0 ? (
-          artistas.map((artista) => (
-            <div key={artista.id} className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-lg hover:border-zinc-700 transition flex flex-col justify-between">
+      {/* Modal Emergente de Login */}
+      {showLoginModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/9oid p-4 backdrop-blur-md">
+          <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-white shadow-2xl relative">
+            <button
+              onClick={() => setShowLoginModal(false)}
+              className="absolute top-4 right-4 text-zinc-400 hover:text-white text-lg cursor-pointer"
+            >
+              ✕
+            </button>
+            <h3 className="text-xl font-bold mb-2 text-red-500">Iniciar Sesión en BUNNY</h3>
+            <p className="text-xs text-zinc-400 mb-6">Ingresa tus credenciales para explorar el catálogo o tu panel.</p>
+            {/* Aquí puedes incrustar el formulario de login o redireccionar tras autenticar */}
+            <form onSubmit={(e) => { e.preventDefault(); alert('Redirigiendo según rol...'); }} className="space-y-4 text-left">
               <div>
-                <div className="h-64 bg-zinc-800 relative">
-                  <img 
-                    src={artista.foto_portada || '/placeholder.jpg'} 
-                    alt={artista.nombre} 
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute top-3 right-3 bg-zinc-950/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-zinc-800 shadow-md">
-                    <StarRating rating={artista.puntuacion || 5.0} />
-                  </div>
-                </div>
-
-                <div className="p-4">
-                  <h2 className="text-xl font-semibold mb-2">{artista.nombre}</h2>
-                  <p className="text-zinc-400 text-sm line-clamp-2 mb-4">{artista.biografia}</p>
-                </div>
+                <label className="block text-xs font-semibold text-zinc-300 uppercase mb-1">Correo Electrónico</label>
+                <input type="email" required placeholder="tu@correo.com" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-red-600" />
               </div>
-
-              <div className="p-4 pt-0">
-                <Link 
-                  href={`/artistas/${artista.slug}`} 
-                  className="block w-full text-center bg-rose-600 hover:bg-rose-700 text-white py-2 rounded-lg font-medium transition"
-                >
-                  Ver Perfil y Packs
-                </Link>
+              <div>
+                <label className="block text-xs font-semibold text-zinc-300 uppercase mb-1">Contraseña</label>
+                <input type="password" required placeholder="••••••••" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-red-600" />
               </div>
-            </div>
-          ))
-        ) : (
-          <p className="col-span-full text-center text-zinc-500 py-12">No hay talentos registradas en este momento.</p>
-        )}
-      </div>
+              <button type="submit" className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl transition text-sm cursor-pointer">
+                Entrar al Sistema
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </main>
-  );
+  )
 }
