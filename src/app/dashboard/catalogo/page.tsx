@@ -17,8 +17,7 @@ export default async function CatalogPage() {
   return (
     <div className="min-h-screen bg-zinc-950 text-white flex flex-col md:flex-row">
       
-      {/* Menú Lateral Izquierdo de Navegación */}
-      <SidebarNav role="user" />
+     
 
       {/* Contenido Principal del Catálogo */}
       <main className="flex-1 p-4 sm:p-8">
