@@ -1,4 +1,5 @@
 'use client'
+import SidebarNav from '@/components/SidebarNav'; // Menú lateral vertical izquierdo
 
 export default function UserDashboardPage() {
   return (
