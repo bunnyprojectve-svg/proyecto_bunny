@@ -1,5 +1,5 @@
 // src/app/catalogo/layout.tsx
-'use client'
+/*'use client'
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -16,7 +16,7 @@ export default function CatalogLayout({ children }: { children: React.ReactNode 
   return (
     <div className="min-h-screen bg-zinc-950 text-white flex flex-col md:flex-row">
       
-      {/* Menú Lateral Izquierdo para Usuarios */}
+      {/* Menú Lateral Izquierdo para Usuarios */}/*
       <aside className="w-full md:w-64 bg-zinc-900 border-r border-zinc-800 p-6 flex flex-col justify-between shrink-0">
         <div>
           <div className="mb-8">
@@ -50,4 +50,4 @@ export default function CatalogLayout({ children }: { children: React.ReactNode 
 
     </div>
   )
-}
+}*/
