@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabaseClient';
 import Link from 'next/link';
 import StarRating from '@/components/StarRating';
-import SidebarNav from '@/components/SidebarNav'; // Menú lateral vertical izquierdo
+//import SidebarNav from '@/components/SidebarNav'; // Menú lateral vertical izquierdo
 
 export default async function CatalogPage() {
   // Consultar la lista de artistas ordenada por puntuación
