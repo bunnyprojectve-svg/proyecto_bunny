@@ -98,7 +98,7 @@ export default function RegistroTalentoPage() {
 
       setSuccessMsg('¡Registro de talento completado exitosamente! Redirigiendo...')
       setTimeout(() => {
-        router.push('/talent/dashboard')
+        router.push('/dashboard/talent/dashboard')
       }, 2000)
 
     } catch (err: any) {

@@ -20,7 +20,7 @@ export default function SidebarNav({ role }: { role: 'user' | 'talent' | 'admin'
 
           {role === 'talent' && (
             <>
-              <Link href="/talent/dashboard" className="block p-3 rounded-xl hover:bg-zinc-800 transition text-zinc-300 hover:text-white">📊 Dashboard de Creadora</Link>
+              <Link href="/dashboard/talent/dashboard" className="block p-3 rounded-xl hover:bg-zinc-800 transition text-zinc-300 hover:text-white">📊 Dashboard de Creadora</Link>
               <Link href="/catalogo" className="block p-3 rounded-xl hover:bg-zinc-800 transition text-zinc-300 hover:text-white">👁️ Ver Catálogo</Link>
             </>
           )}
