@@ -3,26 +3,25 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
-import Link from 'next/link'
 
 export default function LandingPage() {
   const router = useRouter()
   const [showLoginModal, setShowLoginModal] = useState(false)
+  const [showRegisterModal, setShowRegisterModal] = useState(false)
   
-  // Estados para capturar los datos del formulario
+  // Estados para el Login
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
 
-  // Función real de inicio de sesión y redirección por rol
+  // Función de inicio de sesión y redirección por rol
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMsg('')
     setLoading(true)
 
     try {
-      // 1. Autenticar con Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -32,7 +31,6 @@ export default function LandingPage() {
       const userId = authData.user?.id
       if (!userId) throw new Error('No se pudo autenticar el usuario.')
 
-      // 2. Consultar el rol del usuario en la tabla 'profiles'
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
@@ -42,13 +40,12 @@ export default function LandingPage() {
       if (profileError) throw profileError
       const role = profile?.role
 
-      // 3. Redirección automática según el rol asignado
       if (role === 'admin' || role === 'developer' || role === 'supervisor') {
         router.push('/admin')
       } else if (role === 'talent') {
         router.push('/talent/dashboard')
       } else {
-        router.push('/catalogo') // Redirige al catálogo si es usuario normal
+        router.push('/catalogo')
       }
 
     } catch (err: any) {
@@ -69,6 +66,8 @@ export default function LandingPage() {
         <p className="text-zinc-400 text-sm sm:text-base leading-relaxed">
           Descubre los perfiles de nuestros talentos verificados, adquiere packs exclusivos con vigencia de 30 días y disfruta de transmisiones en streaming de alta calidad.
         </p>
+        
+        {/* Botones principales actualizados */}
         <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
           <button
             onClick={() => setShowLoginModal(true)}
@@ -76,16 +75,16 @@ export default function LandingPage() {
           >
             Acceder a la Plataforma
           </button>
-          <Link
-            href="/auth/registro-usuario"
-            className="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 font-medium py-3 px-8 rounded-xl border border-zinc-800 transition text-sm flex items-center justify-center"
+          <button
+            onClick={() => setShowRegisterModal(true)}
+            className="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 font-medium py-3 px-8 rounded-xl border border-zinc-800 transition text-sm flex items-center justify-center cursor-pointer"
           >
-            Registrarse como Usuario
-          </Link>
+            Registrarse
+          </button>
         </div>
       </div>
 
-      {/* Modal Emergente de Login con Supabase Integrado */}
+      {/* Modal Emergente de Login */}
       {showLoginModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-md">
           <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-white shadow-2xl relative">
@@ -135,6 +134,40 @@ export default function LandingPage() {
                 {loading ? 'Autenticando...' : 'Entrar al Sistema'}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Emergente de Selección de Registro (Artista o Usuario) */}
+      {showRegisterModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-md">
+          <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-white shadow-2xl relative text-center">
+            <button
+              onClick={() => setShowRegisterModal(false)}
+              className="absolute top-4 right-4 text-zinc-400 hover:text-white text-lg cursor-pointer"
+            >
+              ✕
+            </button>
+            <h3 className="text-xl font-bold mb-2 text-red-500">Selecciona tu Tipo de Registro</h3>
+            <p className="text-xs text-zinc-400 mb-6">Elige cómo deseas unirte a la plataforma BUNNY.</p>
+            
+            <div className="space-y-3">
+              <button
+                onClick={() => router.push('/auth/registro-usuario')}
+                className="w-full bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-white font-semibold py-3.5 px-4 rounded-xl transition text-sm flex items-center justify-between cursor-pointer"
+              >
+                <span>👤 Registrarme como Usuario</span>
+                <span className="text-red-500">➔</span>
+              </button>
+
+              <button
+                onClick={() => router.push('/auth/registro-talento')}
+                className="w-full bg-red-600/10 hover:bg-red-600/20 border border-red-600/40 text-red-400 font-semibold py-3.5 px-4 rounded-xl transition text-sm flex items-center justify-between cursor-pointer"
+              >
+                <span>✨ Registrarme como Artista (Talento)</span>
+                <span className="text-red-500">➔</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
