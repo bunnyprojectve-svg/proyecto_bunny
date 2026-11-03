@@ -96,7 +96,7 @@ export default function ArtistaPerfilPage({ params }: Props) {
     <main className="min-h-screen bg-zinc-950 text-white p-4 sm:p-8 relative">
       <div className="max-w-4xl mx-auto">
         <Link 
-          href="/" 
+          href="/catalogo"  
           className="text-zinc-400 hover:text-white mb-6 inline-block text-sm transition"
         >
           ← Volver al Catálogo
