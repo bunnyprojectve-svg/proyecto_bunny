@@ -89,7 +89,7 @@ export default function DashboardLayout({
             
             {/* El catálogo lo ven TODOS */}
             <Link 
-              href="/dashboard/catalogo" 
+              href="/catalogo" 
               className={`block px-4 py-2.5 rounded-xl text-sm font-medium transition ${pathname === '/catalogo' ? 'bg-red-600 text-white shadow-lg shadow-red-900/30' : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'}`}
             >
               ✨ Catálogo de Talentos
@@ -99,8 +99,8 @@ export default function DashboardLayout({
             {role === 'talent' && (
               <>
                 <Link 
-                  href="/dashboard/talent/dashboard" 
-                  className={`block px-4 py-2.5 rounded-xl text-sm font-medium transition ${pathname === '/dashboard/talent/dashboard' ? 'bg-red-600 text-white shadow-lg shadow-red-900/30' : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'}`}
+                  href="/talent/dashboard" 
+                  className={`block px-4 py-2.5 rounded-xl text-sm font-medium transition ${pathname === '/talent/dashboard' ? 'bg-red-600 text-white shadow-lg shadow-red-900/30' : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'}`}
                 >
                   📊 Mi Panel de Control
                 </Link>
@@ -120,7 +120,7 @@ export default function DashboardLayout({
             {/* Opciones exclusivas para USER (Usuario normal / Suscriptor) */}
             {role === 'user' && (
               <Link 
-                href="/dashboard/perfil" 
+                href="/perfil" 
                 className={`block px-4 py-2.5 rounded-xl text-sm font-medium transition ${pathname === '/perfil' ? 'bg-red-600 text-white shadow-lg shadow-red-900/30' : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'}`}
               >
                 👤 Mi Perfil y Puntos
@@ -130,8 +130,8 @@ export default function DashboardLayout({
             {/* Opciones exclusivas para ADMIN (El admin no tiene perfil público) */}
             {role === 'admin' && (
               <Link 
-                href="/dashboard/admin/dashboard" 
-                className={`block px-4 py-2.5 rounded-xl text-sm font-medium transition ${pathname === '/dashboard/admin/dashboard' ? 'bg-red-600 text-white shadow-lg shadow-red-900/30' : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'}`}
+                href="/admin/dashboard" 
+                className={`block px-4 py-2.5 rounded-xl text-sm font-medium transition ${pathname === '/admin/dashboard' ? 'bg-red-600 text-white shadow-lg shadow-red-900/30' : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'}`}
               >
                 ⚙️ Gestión de Artistas y Pagos
               </Link>

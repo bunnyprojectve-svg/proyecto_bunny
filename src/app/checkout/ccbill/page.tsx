@@ -23,7 +23,7 @@ function CCBillSuccessContent() {
         )}
       </p>
       <Link
-        href="/dashboard/catalogo"
+        href="/catalogo"
         className="inline-block w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold py-2.5 rounded-lg transition-colors"
       >
         Volver al Catálogo

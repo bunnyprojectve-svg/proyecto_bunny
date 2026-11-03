@@ -85,7 +85,7 @@ export default function ArtistaPerfilPage({ params }: Props) {
     return (
       <main className="min-h-screen bg-zinc-950 text-white p-8 text-center">
         <h1 className="text-2xl font-bold mb-4">Artista no encontrada</h1>
-        <Link href="/dashboard/catalogo" className="text-rose-500 hover:underline">
+        <Link href="/catalogo" className="text-rose-500 hover:underline">
           ← Volver al Catálogo
         </Link>
       </main>
@@ -96,7 +96,7 @@ export default function ArtistaPerfilPage({ params }: Props) {
     <main className="min-h-screen bg-zinc-950 text-white p-4 sm:p-8 relative">
       <div className="max-w-4xl mx-auto">
         <Link 
-          href="/dashboard/catalogo"  
+          href="/catalogo"  
           className="text-zinc-400 hover:text-white mb-6 inline-block text-sm transition"
         >
           ← Volver al Catálogo

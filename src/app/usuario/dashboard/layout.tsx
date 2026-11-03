@@ -25,7 +25,7 @@ export default function UserDashboardLayout({ children }: { children: React.Reac
           </div>
 
           <nav className="space-y-2 text-sm font-medium">
-            <Link href="/dashboard" className="block p-3 rounded-xl hover:bg-zinc-800 transition text-zinc-300 hover:text-white">
+            <Link href="/perfil" className="block p-3 rounded-xl hover:bg-zinc-800 transition text-zinc-300 hover:text-white">
               👤 Mi Perfil y Puntos
             </Link>
             <Link href="/catalogo" className="block p-3 rounded-xl hover:bg-zinc-800 transition text-zinc-300 hover:text-white">

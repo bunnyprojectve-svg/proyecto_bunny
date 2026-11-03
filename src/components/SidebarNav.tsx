@@ -14,13 +14,13 @@ export default function SidebarNav({ role }: { role: 'user' | 'talent' | 'admin'
           {role === 'user' && (
             <>
               <Link href="/catalogo" className="block p-3 rounded-xl hover:bg-zinc-800 transition text-zinc-300 hover:text-white">✨ Catálogo de Talentos</Link>
-              <Link href="/dashboard" className="block p-3 rounded-xl hover:bg-zinc-800 transition text-zinc-300 hover:text-white">👤 Mi Perfil y Puntos</Link>
+              <Link href="/perfil" className="block p-3 rounded-xl hover:bg-zinc-800 transition text-zinc-300 hover:text-white">👤 Mi Perfil y Puntos</Link>
             </>
           )}
 
           {role === 'talent' && (
             <>
-              <Link href="/dashboard/talent/dashboard" className="block p-3 rounded-xl hover:bg-zinc-800 transition text-zinc-300 hover:text-white">📊 Dashboard de Creadora</Link>
+              <Link href="/talent/dashboard" className="block p-3 rounded-xl hover:bg-zinc-800 transition text-zinc-300 hover:text-white">📊 Dashboard de Creadora</Link>
               <Link href="/catalogo" className="block p-3 rounded-xl hover:bg-zinc-800 transition text-zinc-300 hover:text-white">👁️ Ver Catálogo</Link>
             </>
           )}

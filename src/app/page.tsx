@@ -43,7 +43,7 @@ export default function LandingPage() {
       if (role === 'admin' || role === 'developer' || role === 'supervisor') {
         router.push('/admin')
       } else if (role === 'talent') {
-        router.push('/dashboard/talent/dashboard')
+        router.push('/talent/dashboard')
       } else {
         router.push('/catalogo')
       }
