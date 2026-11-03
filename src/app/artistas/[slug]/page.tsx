@@ -108,7 +108,7 @@ export default function ArtistaPerfilPage({ params }: Props) {
             <img 
               src={artista.foto_portada || '/placeholder.jpg'} 
               alt={artista.nombre} 
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
             />
           </div>
 
