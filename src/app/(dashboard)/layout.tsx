@@ -24,7 +24,6 @@ export default function DashboardLayout({
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       if (authError || !user) {
-        // Si no hay sesión, puedes redirigir al login si lo deseas
         setLoading(false)
         return
       }
@@ -40,7 +39,7 @@ export default function DashboardLayout({
       const userRole = profileData?.role || 'user'
       setRole(userRole)
 
-      // 2. Si es artista, buscar su slug en la tabla 'artistas' para el enlace de su perfil público
+      // 2. Si es artista, buscar su slug en la tabla 'artistas'
       if (userRole === 'talent') {
         const { data: artistaData } = await supabase
           .from('artistas')
@@ -61,7 +60,7 @@ export default function DashboardLayout({
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
-    router.push('/auth/login') // Ajusta tu ruta de login si es distinta
+    router.push('/auth/login')
   }
 
   if (loading) {
@@ -87,13 +86,24 @@ export default function DashboardLayout({
           {/* Opciones de Navegación */}
           <nav className="space-y-2">
             
-            {/* El catálogo lo ven TODOS */}
-            <Link 
-              href="/catalogo" 
-              className={`block px-4 py-2.5 rounded-xl text-sm font-medium transition ${pathname === '/catalogo' ? 'bg-red-600 text-white shadow-lg shadow-red-900/30' : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'}`}
-            >
-              ✨ Catálogo de Talentos
-            </Link>
+            {/* Opciones exclusivas para USER (El catálogo solo lo ven ellos) */}
+            {role === 'user' && (
+              <>
+                <Link 
+                  href="/catalogo" 
+                  className={`block px-4 py-2.5 rounded-xl text-sm font-medium transition ${pathname === '/catalogo' ? 'bg-red-600 text-white shadow-lg shadow-red-900/30' : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'}`}
+                >
+                  ✨ Catálogo de Talentos
+                </Link>
+
+                <Link 
+                  href="/perfil" 
+                  className={`block px-4 py-2.5 rounded-xl text-sm font-medium transition ${pathname === '/perfil' ? 'bg-red-600 text-white shadow-lg shadow-red-900/30' : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'}`}
+                >
+                  👤 Mi Perfil y Puntos
+                </Link>
+              </>
+            )}
 
             {/* Opciones exclusivas para TALENT (Artista) */}
             {role === 'talent' && (
@@ -117,17 +127,7 @@ export default function DashboardLayout({
               </>
             )}
 
-            {/* Opciones exclusivas para USER (Usuario normal / Suscriptor) */}
-            {role === 'user' && (
-              <Link 
-                href="/perfil" 
-                className={`block px-4 py-2.5 rounded-xl text-sm font-medium transition ${pathname === '/perfil' ? 'bg-red-600 text-white shadow-lg shadow-red-900/30' : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'}`}
-              >
-                👤 Mi Perfil y Puntos
-              </Link>
-            )}
-
-            {/* Opciones exclusivas para ADMIN (El admin no tiene perfil público) */}
+            {/* Opciones exclusivas para ADMIN */}
             {role === 'admin' && (
               <Link 
                 href="/admin/dashboard" 
