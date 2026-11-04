@@ -40,7 +40,7 @@ export default function LoginPage() {
 
       const role = profile?.role
 
-      // Redirecciones corregidas según el rol:
+      // Redirecciones según el rol:
       if (role === 'admin' || role === 'developer' || role === 'supervisor') {
         // Redirige al dashboard de administración
         router.push('/admin/dashboard') 
@@ -117,17 +117,11 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-6 text-center border-t border-zinc-800 pt-4 space-y-2">
+        <div className="mt-6 text-center border-t border-zinc-800 pt-4">
           <p className="text-xs text-zinc-500">
             ¿No tienes cuenta?{' '}
             <Link href="/auth/registro-usuario" className="text-red-500 font-semibold hover:underline">
               Registrarme como Usuario
-            </Link>
-          </p>
-          <p className="text-xs text-zinc-500">
-            ¿Eres Creadora?{' '}
-            <Link href="/auth/registro-talento" className="text-red-500 font-semibold hover:underline">
-              Registro de Talento
             </Link>
           </p>
         </div>

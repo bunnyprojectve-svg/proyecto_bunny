@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export default function RegistroTalentoPage() {
   const router = useRouter()
@@ -14,8 +15,9 @@ export default function RegistroTalentoPage() {
   const [telefono, setTelefono] = useState('')
   const [descripcion, setDescripcion] = useState('')
   
-  // Fotos (Portada y Galería vía URLs de Bunny Stream / CDN)
+  // Fotos (Portada obligatoria y hasta 4 de galería) y Video (Bunny Stream)
   const [fotoPortada, setFotoPortada] = useState('')
+  const [videoDestacado, setVideoDestacado] = useState('')
   const [galeria1, setGaleria1] = useState('')
   const [galeria2, setGaleria2] = useState('')
   const [galeria3, setGaleria3] = useState('')
@@ -45,7 +47,7 @@ export default function RegistroTalentoPage() {
     setSuccessMsg('')
 
     if (!fotoPortada.trim()) {
-      setErrorMsg('Debes ingresar la URL de la foto de portada obligatoria.')
+      setErrorMsg('Debes ingresar obligatoriamente la URL de la foto de portada.')
       return
     }
 
@@ -62,7 +64,7 @@ export default function RegistroTalentoPage() {
       const userId = authData.user?.id
       if (!userId) throw new Error('No se pudo obtener el ID del usuario.')
 
-      // 2. Insertar en la tabla profiles
+      // 2. Insertar en la tabla profiles con rol 'talent'
       const { error: profileError } = await supabase.from('profiles').insert({
         id: userId,
         email,
@@ -76,7 +78,7 @@ export default function RegistroTalentoPage() {
       const slug = nombreArtistico.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')
       const fotosArray = [galeria1, galeria2, galeria3, galeria4].filter(Boolean)
       
-      // 3. Insertar TODOS los datos del formulario (incluyendo galería y datos de pago) en la tabla artistas
+      // 3. Insertar TODOS los datos del formulario en la tabla artistas
       const { error: artistaError } = await supabase.from('artistas').insert({
         id: userId,
         nombre: nombreArtistico,
@@ -84,6 +86,7 @@ export default function RegistroTalentoPage() {
         slug: slug,
         biografia: descripcion,
         foto_portada: fotoPortada,
+        video_destacado: videoDestacado || null,
         fotos_galeria: fotosArray,
         telefono: telefono,
         binance_pay: binancePay || null,
@@ -96,9 +99,9 @@ export default function RegistroTalentoPage() {
 
       if (artistaError) throw artistaError
 
-      setSuccessMsg('¡Registro de talento completado exitosamente! Redirigiendo...')
+      setSuccessMsg('¡Registro de talento completado exitosamente! Redirigiendo a su perfil...')
       setTimeout(() => {
-        router.push('/talent/dashboard')
+        router.push(`/artistas/${slug}`)
       }, 2000)
 
     } catch (err: any) {
@@ -111,24 +114,33 @@ export default function RegistroTalentoPage() {
 
   return (
     <main className="min-h-screen bg-zinc-950 text-white py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-2xl mx-auto bg-zinc-900 border border-zinc-800 rounded-2xl p-6 sm:p-10 shadow-2xl">
-        <div className="bg-rose-950/60 border border-rose-600/40 p-3 rounded-xl mb-6 text-center text-xs text-rose-200">
-          ⚠️ <strong>Plataforma Exclusiva +18:</strong> Formulario de registro oficial para talentos verificados.
+      <div className="max-w-2xl mx-auto bg-zinc-900 border border-zinc-800 rounded-2xl p-6 sm:p-10 shadow-2xl space-y-6">
+        
+        {/* Navegación interna de admin */}
+        <div className="flex justify-between items-center border-b border-zinc-800 pb-4">
+          <Link href="/admin/dashboard" className="text-xs text-zinc-400 hover:text-white transition">
+            ← Volver al Panel de Admin
+          </Link>
+          <span className="text-xs bg-rose-950 text-rose-400 border border-rose-800 px-3 py-1 rounded-full font-bold uppercase">
+            Gestión Exclusiva Admin
+          </span>
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-extrabold mb-2 text-center">Registro de Nuevo Talento</h1>
-        <p className="text-xs sm:text-sm text-zinc-400 mb-8 text-center">
-          Completa tus datos personales, añade las URLs de tu contenido (Bunny Stream) y configura tus métodos de pago.
-        </p>
+        <div className="text-center">
+          <h1 className="text-2xl sm:text-3xl font-extrabold mb-2">Registrar Nuevo Talento</h1>
+          <p className="text-xs sm:text-sm text-zinc-400">
+            Completa los datos de la creadora, añade su portada obligatoria, galería, video de Bunny Stream y datos de cobro.
+          </p>
+        </div>
 
         {errorMsg && (
-          <div className="bg-red-950/80 border border-red-600 text-red-200 p-3 rounded-xl mb-6 text-xs sm:text-sm">
+          <div className="bg-red-950/80 border border-red-600 text-red-200 p-3 rounded-xl text-xs sm:text-sm">
             {errorMsg}
           </div>
         )}
 
         {successMsg && (
-          <div className="bg-emerald-950/80 border border-emerald-600 text-emerald-200 p-3 rounded-xl mb-6 text-xs sm:text-sm">
+          <div className="bg-emerald-950/80 border border-emerald-600 text-emerald-200 p-3 rounded-xl text-xs sm:text-sm">
             {successMsg}
           </div>
         )}
@@ -165,20 +177,20 @@ export default function RegistroTalentoPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
-                Correo Electrónico (Obligatorio) *
+                Correo Electrónico (Acceso) *
               </label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="tu@correo.com"
+                placeholder="talento@correo.com"
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-rose-500 transition"
               />
             </div>
             <div>
               <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
-                Contraseña *
+                Contraseña Temporal *
               </label>
               <input
                 type="password"
@@ -191,20 +203,18 @@ export default function RegistroTalentoPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
-                Teléfono de Contacto *
-              </label>
-              <input
-                type="tel"
-                required
-                value={telefono}
-                onChange={(e) => setTelefono(e.target.value)}
-                placeholder="+58 412 0000000"
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-rose-500 transition"
-              />
-            </div>
+          <div>
+            <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
+              Teléfono de Contacto *
+            </label>
+            <input
+              type="tel"
+              required
+              value={telefono}
+              onChange={(e) => setTelefono(e.target.value)}
+              placeholder="+58 412 0000000"
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-rose-500 transition"
+            />
           </div>
 
           <div>
@@ -221,14 +231,14 @@ export default function RegistroTalentoPage() {
               rows={3}
               value={descripcion}
               onChange={handleDescripcionChange}
-              placeholder="Cuéntale a tus seguidores sobre ti (máximo 300 caracteres)..."
+              placeholder="Cuéntale a los seguidores sobre la artista (máximo 300 caracteres)..."
               className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-rose-500 transition resize-none"
             />
           </div>
 
-          {/* Fotos vía URL (Bunny Stream / CDN) */}
+          {/* Multimedia (Portada, Video y Galería) */}
           <div className="space-y-4 pt-2 border-t border-zinc-800">
-            <h3 className="text-xs font-bold text-rose-400 uppercase tracking-wider">Imágenes del Perfil (URLs Bunny / CDN)</h3>
+            <h3 className="text-xs font-bold text-rose-400 uppercase tracking-wider">Multimedia de la Artista</h3>
             
             <div>
               <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
@@ -240,6 +250,19 @@ export default function RegistroTalentoPage() {
                 value={fotoPortada}
                 onChange={(e) => setFotoPortada(e.target.value)}
                 placeholder="https://tu-storage.b-cdn.net/portada.jpg"
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-rose-500 transition"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
+                URL del Video Destacado (Bunny Stream iFrame)
+              </label>
+              <input
+                type="url"
+                value={videoDestacado}
+                onChange={(e) => setVideoDestacado(e.target.value)}
+                placeholder="https://iframe.mediadelivery.net/embed/..."
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-rose-500 transition"
               />
             </div>
@@ -259,11 +282,11 @@ export default function RegistroTalentoPage() {
 
           {/* Métodos de Pago */}
           <div className="space-y-4 pt-4 border-t border-zinc-800">
-            <h3 className="text-xs font-bold text-rose-400 uppercase tracking-wider">Métodos de Cobro (BinancePay o Datos Bancarios Nacionales)</h3>
+            <h3 className="text-xs font-bold text-rose-400 uppercase tracking-wider">Métodos de Cobro (BinancePay o Datos Bancarios)</h3>
             
             <div>
               <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
-                BinancePay (Correo o ID - Opcional si usas pago nacional)
+                BinancePay (Correo o ID)
               </label>
               <input
                 type="text"
@@ -287,7 +310,7 @@ export default function RegistroTalentoPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">Teléfono para Pago Móvil</label>
+                <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">Teléfono Pago Móvil</label>
                 <input type="tel" value={telefonoPagoMovil} onChange={(e) => setTelefonoPagoMovil(e.target.value)} placeholder="04120000000" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-rose-500" />
               </div>
               <div>
@@ -302,7 +325,7 @@ export default function RegistroTalentoPage() {
             disabled={loading}
             className="w-full bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-rose-900/20 text-sm cursor-pointer disabled:opacity-50"
           >
-            {loading ? 'Registrando talento...' : 'Completar Registro de Talento'}
+            {loading ? 'Registrando talento...' : 'Crear Talento y Ver Perfil'}
           </button>
         </form>
       </div>

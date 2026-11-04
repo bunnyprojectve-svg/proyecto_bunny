@@ -86,7 +86,7 @@ export default function DashboardLayout({
           {/* Opciones de Navegación */}
           <nav className="space-y-2">
             
-            {/* Opciones exclusivas para USER (El catálogo solo lo ven ellos) */}
+            {/* Opciones exclusivas para USER */}
             {role === 'user' && (
               <>
                 <Link 
@@ -129,12 +129,42 @@ export default function DashboardLayout({
 
             {/* Opciones exclusivas para ADMIN */}
             {role === 'admin' && (
-              <Link 
-                href="/admin/dashboard" 
-                className={`block px-4 py-2.5 rounded-xl text-sm font-medium transition ${pathname === '/admin/dashboard' ? 'bg-red-600 text-white shadow-lg shadow-red-900/30' : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'}`}
-              >
-                ⚙️ Gestión de Artistas y Pagos
-              </Link>
+              <div className="space-y-1.5">
+                <Link 
+                  href="/admin/dashboard" 
+                  className={`block px-4 py-2.5 rounded-xl text-sm font-medium transition ${pathname === '/admin/dashboard' ? 'bg-red-600 text-white shadow-lg shadow-red-900/30' : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'}`}
+                >
+                  ⚙️ Panel Principal
+                </Link>
+
+                <Link 
+                  href="/admin/artistas/crear" 
+                  className={`block px-4 py-2.5 rounded-xl text-sm font-medium transition ${pathname === '/admin/artistas/crear' ? 'bg-red-600 text-white shadow-lg shadow-red-900/30' : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'}`}
+                >
+                  ➕ Crear Nueva Artista
+                </Link>
+
+                <Link 
+                  href="/admin/artistas/editar" 
+                  className={`block px-4 py-2.5 rounded-xl text-sm font-medium transition ${pathname === '/admin/artistas/editar' ? 'bg-red-600 text-white shadow-lg shadow-red-900/30' : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'}`}
+                >
+                  ✏️ Modificar Artistas
+                </Link>
+
+                <Link 
+                  href="/admin/packs/crear" 
+                  className={`block px-4 py-2.5 rounded-xl text-sm font-medium transition ${pathname === '/admin/packs/crear' ? 'bg-red-600 text-white shadow-lg shadow-red-900/30' : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'}`}
+                >
+                  📦 Crear Pack Multimedia
+                </Link>
+
+                <Link 
+                  href="/admin/pagos/configuracion" 
+                  className={`block px-4 py-2.5 rounded-xl text-sm font-medium transition ${pathname === '/admin/pagos/configuracion' ? 'bg-red-600 text-white shadow-lg shadow-red-900/30' : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'}`}
+                >
+                  💳 Configurar Pagos
+                </Link>
+              </div>
             )}
 
           </nav>
