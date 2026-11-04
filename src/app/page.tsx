@@ -7,7 +7,6 @@ import { supabase } from '@/lib/supabaseClient'
 export default function LandingPage() {
   const router = useRouter()
   const [showLoginModal, setShowLoginModal] = useState(false)
-  const [showRegisterModal, setShowRegisterModal] = useState(false)
   
   // Estados para el Login
   const [email, setEmail] = useState('')
@@ -41,7 +40,7 @@ export default function LandingPage() {
       const role = profile?.role
 
       if (role === 'admin' || role === 'developer' || role === 'supervisor') {
-        router.push('/admin')
+        router.push('/admin/dashboard')
       } else if (role === 'talent') {
         router.push('/talent/dashboard')
       } else {
@@ -76,7 +75,7 @@ export default function LandingPage() {
             Acceder a la Plataforma
           </button>
           <button
-            onClick={() => setShowRegisterModal(true)}
+            onClick={() => router.push('/auth/registro-usuario')}
             className="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 font-medium py-3 px-8 rounded-xl border border-zinc-800 transition text-sm flex items-center justify-center cursor-pointer"
           >
             Registrarse
@@ -138,39 +137,6 @@ export default function LandingPage() {
         </div>
       )}
 
-      {/* Modal Emergente de Selección de Registro (Artista o Usuario) */}
-      {showRegisterModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-md">
-          <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-white shadow-2xl relative text-center">
-            <button
-              onClick={() => setShowRegisterModal(false)}
-              className="absolute top-4 right-4 text-zinc-400 hover:text-white text-lg cursor-pointer"
-            >
-              ✕
-            </button>
-            <h3 className="text-xl font-bold mb-2 text-red-500">Selecciona tu Tipo de Registro</h3>
-            <p className="text-xs text-zinc-400 mb-6">Elige cómo deseas unirte a la plataforma BUNNY.</p>
-            
-            <div className="space-y-3">
-              <button
-                onClick={() => router.push('/auth/registro-usuario')}
-                className="w-full bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-white font-semibold py-3.5 px-4 rounded-xl transition text-sm flex items-center justify-between cursor-pointer"
-              >
-                <span>👤 Registrarme como Usuario</span>
-                <span className="text-red-500">➔</span>
-              </button>
-
-              <button
-                onClick={() => router.push('/auth/registro-talento')}
-                className="w-full bg-red-600/10 hover:bg-red-600/20 border border-red-600/40 text-red-400 font-semibold py-3.5 px-4 rounded-xl transition text-sm flex items-center justify-between cursor-pointer"
-              >
-                <span>✨ Registrarme como Artista (Talento)</span>
-                <span className="text-red-500">➔</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   )
 }

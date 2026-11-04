@@ -40,12 +40,12 @@ export default function LoginPage() {
 
       const role = profile?.role
 
-      // Redirecciones según el rol:
+      // Redirecciones estrictas según el rol:
       if (role === 'admin' || role === 'developer' || role === 'supervisor') {
         // Redirige al dashboard de administración
         router.push('/admin/dashboard') 
       } else if (role === 'talent') {
-        // Redirige al panel del artista
+        // Redirige EXCLUSIVAMENTE a su propio dashboard de artista
         router.push('/talent/dashboard') 
       } else {
         // Redirige al catálogo o panel del usuario estándar
