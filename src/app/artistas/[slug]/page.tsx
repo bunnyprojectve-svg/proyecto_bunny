@@ -23,7 +23,7 @@ export default function ArtistaPerfilPage({ params }: Props) {
   const [packs, setPacks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Estados para el Modal de Pago Dinámico (Momento 2)
+  // Estados para el Modal de Pago Dinámico
   const [mostrarModalPago, setMostrarModalPago] = useState(false);
   const [packSeleccionado, setPackSeleccionado] = useState<any>(null);
   const [pasarelasActivas, setPasarelasActivas] = useState<MetodoPago[]>([]);
@@ -61,20 +61,20 @@ export default function ArtistaPerfilPage({ params }: Props) {
 
       setArtista(artistaData);
 
-      // 2. Registrar visita (Manejo defensivo por si la tabla no existe o falla)
-      await supabase.from('perfil_visitas').insert({
-        artista_slug: slugArtista,
-      }).catch(() => {});
+      // 2. Registrar visita de forma segura (Protegido con try/catch para evitar fallos de ejecución)
+      try {
+        await supabase.from('perfil_visitas').insert({
+          artista_slug: slugArtista,
+        });
+      } catch (visitaErr) {
+        console.warn('No se pudo registrar la visita:', visitaErr);
+      }
 
       // 3. Obtener EXCLUSIVAMENTE los packs asociados a esta artista usando su ID
       const { data: packsData, error: packsError } = await supabase
         .from('packs')
         .select('*')
         .eq('artista_id', artistaData.id);
-
-      console.log("Artista actual ID:", artistaData.id);
-      console.log("Packs encontrados:", packsData);
-      console.log("Error de packs:", packsError);
 
       if (!packsError && packsData) {
         setPacks(packsData);
@@ -143,7 +143,6 @@ export default function ArtistaPerfilPage({ params }: Props) {
     const precioNumerico = Number(pack.precio);
 
     if (precioNumerico === 0) {
-      // Reclamar pack gratuito
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
@@ -168,7 +167,6 @@ export default function ArtistaPerfilPage({ params }: Props) {
         alert('Error al reclamar el pack: ' + err.message);
       }
     } else {
-      // Abrir modal de pago para packs con costo
       setPackSeleccionado(pack);
       setMostrarModalPago(true);
     }
@@ -186,7 +184,7 @@ export default function ArtistaPerfilPage({ params }: Props) {
     return (
       <div className="min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center space-y-4">
         <h1 className="text-2xl font-bold">Artista no encontrada</h1>
-        <Link href="/catalogo" className="text-red-500 hover:underline text-sm">
+        <Link href="/" className="text-red-500 hover:underline text-sm">
           ← Volver al catálogo de talentos
         </Link>
       </div>
@@ -231,7 +229,7 @@ export default function ArtistaPerfilPage({ params }: Props) {
           </div>
 
           <Link
-            href="/catalogo"
+            href="/"
             className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-5 py-2.5 rounded-xl text-xs font-bold transition border border-zinc-700"
           >
             ← Volver al Catálogo
@@ -327,7 +325,7 @@ export default function ArtistaPerfilPage({ params }: Props) {
 
       </div>
 
-      {/* Modal de Pago Dinámico para Packs (>0 USD) */}
+      {/* Modal de Pago Dinámico */}
       {mostrarModalPago && packSeleccionado && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-zinc-900 border border-zinc-800 max-w-md w-full rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl relative">
