@@ -41,7 +41,6 @@ export default function LoginPage() {
 
       const role = profile?.role
 
-      // Redirecciones estrictas según el rol:
       if (role === 'admin' || role === 'developer' || role === 'supervisor') {
         router.push('/admin/dashboard') 
       } else if (role === 'talent') {
@@ -96,7 +95,7 @@ export default function LoginPage() {
                 Contraseña *
               </label>
             </div>
-            <div className="relative">
+            <div className="relative w-full">
               <input
                 type={mostrarPassword ? 'text' : 'password'}
                 required
@@ -108,7 +107,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setMostrarPassword(!mostrarPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white text-xs font-bold px-2 py-1 transition cursor-pointer select-none"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white text-sm px-2 py-1 transition cursor-pointer select-none z-10"
                 title={mostrarPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
               >
                 {mostrarPassword ? '🙈' : '👁️'}
