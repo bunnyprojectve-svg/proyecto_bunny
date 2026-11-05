@@ -61,16 +61,16 @@ export default function ArtistaPerfilPage({ params }: Props) {
 
       setArtista(artistaData);
 
-      // 2. Registrar visita
+      // 2. Registrar visita (Manejo defensivo por si la tabla no existe o falla)
       await supabase.from('perfil_visitas').insert({
         artista_slug: slugArtista,
-      });
+      }).catch(() => {});
 
-      // 3. Obtener packs de la plataforma
+      // 3. Obtener EXCLUSIVAMENTE los packs asociados a esta artista usando su ID
       const { data: packsData, error: packsError } = await supabase
         .from('packs')
         .select('*')
-        .limit(8);
+        .eq('artista_id', artistaData.id); // <-- CORREGIDO: Filtro estricto por artista
 
       if (!packsError && packsData) {
         setPacks(packsData);
@@ -272,7 +272,7 @@ export default function ArtistaPerfilPage({ params }: Props) {
           </div>
         )}
 
-        {/* 4. Packs Disponibles */}
+        {/* 4. Packs Exclusivos de la Artista */}
         <div className="space-y-6">
           <div className="flex justify-between items-center">
             <div>
@@ -283,7 +283,7 @@ export default function ArtistaPerfilPage({ params }: Props) {
 
           {packs.length === 0 ? (
             <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-2xl text-center text-zinc-500">
-              No hay packs disponibles en este momento.
+              No hay packs disponibles para esta artista en este momento.
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -335,7 +335,6 @@ export default function ArtistaPerfilPage({ params }: Props) {
               <p className="text-xs text-zinc-400 mt-1">Total a pagar: <strong className="text-emerald-400">${packSeleccionado.precio} USD</strong></p>
             </div>
 
-            {/* Selector o Alerta de Pasarelas */}
             {pasarelasActivas.length === 0 ? (
               <div className="bg-red-950/60 border border-red-600/50 p-4 rounded-2xl text-center text-xs text-red-200">
                 ⚠️ Actualmente no hay pasarelas de pago activas. Por favor, intente de nuevo más tarde.

@@ -3,10 +3,20 @@ import Link from 'next/link';
 import StarRating from '@/components/StarRating';
 
 export default async function CatalogPage() {
-  // Consultar la lista de artistas ordenada por puntuación
+  // Consultar la lista de artistas ordenada por puntuación, asegurando que estén activos
+  // y que su cuenta principal (profiles) siga existiendo en la base de datos.
   const { data: artistas, error } = await supabase
     .from('artistas')
-    .select('id, nombre, slug, foto_portada, biografia, puntuacion')
+    .select(`
+      id, 
+      nombre, 
+      slug, 
+      foto_portada, 
+      biografia, 
+      puntuacion,
+      profiles!inner (id)
+    `)
+    .eq('activo', true)
     .order('puntuacion', { ascending: false });
 
   if (error) {
@@ -33,9 +43,9 @@ export default async function CatalogPage() {
             <div key={artista.id} className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-lg hover:border-zinc-700 transition flex flex-col justify-between">
               <div>
                 <div className="h-64 bg-zinc-800 relative">
-                  <img 
-                    src={artista.foto_portada || '/placeholder.jpg'} 
-                    alt={artista.nombre} 
+                  <img
+                    src={artista.foto_portada || '/placeholder.jpg'}
+                    alt={artista.nombre}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute top-3 right-3 bg-zinc-950/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-zinc-800 shadow-md">
@@ -48,8 +58,8 @@ export default async function CatalogPage() {
                 </div>
               </div>
               <div className="p-4 pt-0">
-                <Link 
-                  href={`/artistas/${artista.slug}`} 
+                <Link
+                  href={`/artistas/${artista.slug}`}
                   className="block w-full text-center bg-rose-600 hover:bg-rose-700 text-white py-2 rounded-lg font-medium transition text-sm"
                 >
                   Ver Perfil y Packs
