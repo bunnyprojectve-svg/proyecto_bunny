@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabaseClient'
@@ -15,14 +15,38 @@ export default function CrearPackAdminPage() {
   const [guardando, setGuardando] = useState(false)
   const [mensaje, setMensaje] = useState('')
 
-  // Campos del Pack (coincidiendo con las columnas de tu BD)
+  // Listado de artistas para el selector
+  const [artistasList, setArtistasList] = useState<any[]>([])
+  const [artistaIdSeleccionado, setArtistaIdSeleccionado] = useState('')
+
+  // Campos del Pack
   const [titulo, setTitulo] = useState('')
   const [descripcion, setDescripcion] = useState('')
   const [precio, setPrecio] = useState('')
   const [incluyeVideollamada, setIncluyeVideollamada] = useState(false)
 
-  // Lista de contenidos (fotos y videos con URL de Bunny Stream)
+  // Lista de contenidos (fotos y videos)
   const [items, setItems] = useState<ItemContenido[]>([{ tipo: 'foto', recurso_url: '' }])
+
+  useEffect(() => {
+    fetchArtistas()
+  }, [])
+
+  const fetchArtistas = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('artistas')
+        .select('id, nombre, slug')
+        .order('nombre', { ascending: true })
+
+      if (!error && data) {
+        setArtistasList(data)
+        if (data.length > 0) setArtistaIdSeleccionado(data[0].id)
+      }
+    } catch (err) {
+      console.error('Error al cargar artistas:', err)
+    }
+  }
 
   const handleAgregarItem = () => {
     setItems([...items, { tipo: 'foto', recurso_url: '' }])
@@ -41,14 +65,21 @@ export default function CrearPackAdminPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!artistaIdSeleccionado) {
+      setMensaje('Error: Debes seleccionar a una artista para asociar este pack.')
+      return
+    }
+
     setGuardando(true)
     setMensaje('')
 
     try {
-      // 1. Insertar el pack principal en la tabla 'packs'
+      // 1. Insertar el pack principal en la tabla 'packs' asociándolo al artista seleccionado
+      // (Asegúrate de que tu tabla 'packs' tenga la columna 'artista_id' o 'artista_slug')
       const { data: packInsertado, error: packError } = await supabase
         .from('packs')
         .insert({
+          artista_id: artistaIdSeleccionado, // <--- Aquí se asocia con el perfil del artista
           titulo,
           descripcion,
           precio: parseFloat(precio) || 0,
@@ -78,7 +109,7 @@ export default function CrearPackAdminPage() {
         if (contenidoError) throw contenidoError
       }
 
-      setMensaje('¡Pack y contenido multimedia creados con éxito en Supabase!')
+      setMensaje('¡Pack asignado al perfil y creado con éxito en Supabase!')
       setTimeout(() => {
         router.push('/admin/dashboard')
       }, 2000)
@@ -105,8 +136,8 @@ export default function CrearPackAdminPage() {
         </div>
 
         <div>
-          <h1 className="text-2xl font-black">Crear Nuevo Pack Multimedia</h1>
-          <p className="text-zinc-400 text-sm mt-1">Configura los detalles del pack y adjunta las URLs de Bunny Stream para los videos y de almacenamiento para las fotos.</p>
+          <h1 className="text-2xl font-black">Crear y Asignar Pack Multimedia</h1>
+          <p className="text-zinc-400 text-sm mt-1">Selecciona la artista propietaria y configura el contenido exclusivo.</p>
         </div>
 
         {mensaje && (
@@ -117,9 +148,26 @@ export default function CrearPackAdminPage() {
 
         <form onSubmit={handleSubmit} className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl shadow-xl space-y-6">
           
+          {/* Selector de Artista Propietaria */}
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold text-red-400 uppercase">1. Artista Propietaria del Pack *</label>
+            <select
+              value={artistaIdSeleccionado}
+              onChange={(e) => setArtistaIdSeleccionado(e.target.value)}
+              required
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-red-600"
+            >
+              {artistasList.map((artista) => (
+                <option key={artista.id} value={artista.id}>
+                  {artista.nombre} (@{artista.slug})
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Información Básica */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-bold text-red-400">1. Información General del Pack</h2>
+          <div className="space-y-4 pt-4 border-t border-zinc-800">
+            <h2 className="text-lg font-bold text-red-400">2. Información General del Pack</h2>
             
             <div>
               <label className="block text-xs font-semibold text-zinc-300 uppercase mb-1">Título del Pack</label>
@@ -172,10 +220,10 @@ export default function CrearPackAdminPage() {
             </div>
           </div>
 
-          {/* Carga de Contenidos (URLs de Bunny Stream / Fotos) */}
+          {/* Carga de Contenidos */}
           <div className="space-y-4 pt-4 border-t border-zinc-800">
             <div className="flex justify-between items-center">
-              <h2 className="text-lg font-bold text-red-400">2. Contenido Multimedia (URLs)</h2>
+              <h2 className="text-lg font-bold text-red-400">3. Contenido Multimedia (URLs)</h2>
               <button
                 type="button"
                 onClick={handleAgregarItem}
@@ -226,7 +274,7 @@ export default function CrearPackAdminPage() {
             disabled={guardando}
             className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-red-950/40 text-sm disabled:opacity-50"
           >
-            {guardando ? 'Guardando pack...' : 'Crear Pack y Publicar Contenido'}
+            {guardando ? 'Guardando pack...' : 'Crear Pack y Asignar a Artista'}
           </button>
 
         </form>
