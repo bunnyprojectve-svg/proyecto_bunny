@@ -20,37 +20,33 @@ export default function RegistroUsuarioPage() {
   const [mostrarPassword, setMostrarPassword] = useState(false)
   const [aceptaTerminos, setAceptaTerminos] = useState(false)
   
+  // Monto standard de la suscripción fijado en código (por ahora 00.00)
+  const precioSuscripcion = "00.00"
+  
   // Estados para el flujo de pago inicial (Momento 1)
   const [userIdRegistrado, setUserIdRegistrado] = useState<string | null>(null)
   const [mostrarModalPago, setMostrarModalPago] = useState(false)
   const [pasarelasActivas, setPasarelasActivas] = useState<MetodoPago[]>([])
   const [pasarelaSeleccionada, setPasarelaSeleccionada] = useState<MetodoPago | null>(null)
   const [hashTransaccion, setHashTransaccion] = useState('')
-  const [precioSuscripcion, setPrecioSuscripcion] = useState<number>(15.00) // Precio configurable de membresía
 
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
 
   useEffect(() => {
-    fetchPasarelasYConfig()
+    fetchPasarelasActivas()
   }, [])
 
-  const fetchPasarelasYConfig = async () => {
+  const fetchPasarelasActivas = async () => {
     try {
-      const { data: pasarelas, error: pasarelasError } = await supabase
+      const { data, error } = await supabase
         .from('configuracion_pagos')
         .select('*')
         .eq('activa', true)
 
-      if (!pasarelasError && pasarelas) {
-        const pasarelasDisponibles = pasarelas.filter(p => p.tipo !== 'suscripcion_config')
-        setPasarelasActivas(pasarelasDisponibles)
-        if (pasarelasDisponibles.length > 0) setPasarelaSeleccionada(pasarelasDisponibles[0])
-        
-        const configPrecio = pasarelas.find(p => p.tipo === 'suscripcion_config')
-        if (configPrecio?.detalles?.precio) {
-          setPrecioSuscripcion(Number(configPrecio.detalles.precio))
-        }
+      if (!error && data) {
+        setPasarelasActivas(data)
+        if (data.length > 0) setPasarelaSeleccionada(data[0])
       }
     } catch (err) {
       console.error('Error al cargar pasarelas activas:', err)
@@ -79,24 +75,34 @@ export default function RegistroUsuarioPage() {
 
       if (!userId) throw new Error('No se pudo completar la creación del usuario.')
 
+      const esGratis = Number(precioSuscripcion) === 0
+
+      // Insertar perfil (si es gratis activamos la suscripción de una vez; si es de pago, inicia inactiva)
       const { error: profileError } = await supabase.from('profiles').insert({
         id: userId,
         email,
         role: 'user',
         is_age_verified: true,
-        subscription_active: false,
+        subscription_active: esGratis,
       })
 
       if (profileError) throw profileError
 
-      setUserIdRegistrado(userId)
       setLoading(false)
-      
-      if (pasarelasActivas.length > 0) {
-        setMostrarModalPago(true)
+
+      // EVALUACIÓN DE MONTO Y PASARELAS:
+      if (esGratis || pasarelasActivas.length === 0) {
+        // Si el monto es cero O no hay pasarelas activas, ingresa directo
+        if (esGratis) {
+          alert('¡Cuenta creada y suscripción gratuita activada con éxito!')
+        } else {
+          alert('Cuenta creada con éxito.')
+        }
+        router.push('/catalogo')
       } else {
-        alert('Cuenta creada con éxito.')
-        router.push('/')
+        // Si el monto es mayor a 0 y SÍ hay pasarelas activas, mostramos el modal de pago
+        setUserIdRegistrado(userId)
+        setMostrarModalPago(true)
       }
 
     } catch (err: any) {
@@ -139,10 +145,11 @@ export default function RegistroUsuarioPage() {
               </span>
               <h2 className="text-2xl font-black">Activa tu Cuenta</h2>
               <p className="text-xs text-zinc-400">
-                Realiza el pago exacto de <strong className="text-emerald-400">${precioSuscripcion} USD</strong> para desbloquear tu acceso total.
+                Realiza el pago correspondiente de <strong className="text-emerald-400">${precioSuscripcion} USD</strong> para desbloquear el acceso total.
               </p>
             </div>
 
+            {/* Selector dinámico de pasarelas activas */}
             <div className="space-y-4 bg-zinc-950 p-4 rounded-2xl border border-zinc-800">
               <label className="block text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">Selecciona Método de Pago:</label>
               <div className="flex gap-2">
@@ -160,7 +167,7 @@ export default function RegistroUsuarioPage() {
 
               {pasarelaSeleccionada?.tipo === 'binance_pay' && (
                 <div className="space-y-2 pt-2 border-t border-zinc-800">
-                  <p className="text-xs text-zinc-300">Envía el monto a la siguiente cuenta de BinancePay:</p>
+                  <p className="text-xs text-zinc-300">Envía el monto exacto de suscripción a la siguiente cuenta de BinancePay:</p>
                   <div className="bg-zinc-900 p-3 rounded-xl border border-yellow-600/30 font-mono text-xs text-yellow-400">
                     <strong>{pasarelaSeleccionada.alias}:</strong> {pasarelaSeleccionada.detalles?.identifier}
                   </div>
@@ -195,7 +202,7 @@ export default function RegistroUsuarioPage() {
         </div>
       )}
 
-      {/* Formulario Principal de Registro */}
+      {/* Formulario Estándar de Registro */}
       <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-6 sm:p-8 shadow-2xl">
         <div className="bg-red-950/60 border border-red-600/40 p-2.5 rounded-xl mb-6 text-center text-xs text-red-200">
           ⚠️ <strong>Sitio Exclusivo +18:</strong> Registro de Usuario.

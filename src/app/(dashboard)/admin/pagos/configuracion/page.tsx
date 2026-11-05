@@ -2,96 +2,63 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
-import Link from 'next/link'
 
-interface CuentaBinance {
-  id: string
-  identifier: string // Correo o Pay ID
-  alias: string      // Nombre descriptivo (ej. "Cuenta Principal 1")
-  activa: boolean
-}
-
-export default function ConfiguracionPagosAdminPage() {
-  const [cuentasBinance, setCuentasBinance] = useState<CuentaBinance[]>([])
-  const [nuevoAlias, setNuevoAlias] = useState('')
-  const [nuevoIdentifier, setNuevoIdentifier] = useState('')
-  
+export default function AdminConfigPagosPage() {
+  const [pasarelas, setPasarelas] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [guardando, setGuardando] = useState(false)
-  const [mensaje, setMensaje] = useState('')
+  
+  // Estado para crear nueva pasarela
+  const [tipoPasarela, setTipoPasarela] = useState('binance_pay')
+  const [alias, setAlias] = useState('')
+  const [identifier, setIdentifier] = useState('')
+  const [errorMsg, setErrorMsg] = useState('')
 
   useEffect(() => {
-    fetchConfiguracionPagos()
+    fetchPasarelas()
   }, [])
 
-  const fetchConfiguracionPagos = async () => {
+  const fetchPasarelas = async () => {
     try {
       setLoading(true)
       const { data, error } = await supabase
         .from('configuracion_pagos')
         .select('*')
-        .eq('tipo', 'binance_pay')
-        .order('created_at', { ascending: true })
+        .order('created_at', { ascending: false })
 
-      if (!error && data) {
-        setCuentasBinance(
-          data.map((item: any) => ({
-            id: item.id,
-            alias: item.alias || 'Binance Pay',
-            identifier: item.detalles?.identifier || '',
-            activa: item.activa ?? true,
-          }))
-        )
-      }
-    } catch (err) {
-      console.error('Error al cargar metodos de pago:', err)
+      if (error) throw error
+      setPasarelas(data || [])
+    } catch (err: any) {
+      console.error('Error al cargar pasarelas:', err.message)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleAgregarCuentaBinance = async (e: React.FormEvent) => {
+  const handleCrearPasarela = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!nuevoIdentifier.trim()) return
-
-    setGuardando(true)
-    setMensaje('')
+    setErrorMsg('')
 
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('configuracion_pagos')
         .insert({
-          tipo: 'binance_pay',
-          alias: nuevoAlias || 'Cuenta BinancePay',
-          detalles: { identifier: nuevoIdentifier.trim() },
+          tipo_pasarela: tipoPasarela,
+          alias,
           activa: true,
+          detalles: { identifier }
         })
-        .select()
-        .single()
 
       if (error) throw error
 
-      setCuentasBinance([
-        ...cuentasBinance,
-        {
-          id: data.id,
-          alias: data.alias,
-          identifier: nuevoIdentifier.trim(),
-          activa: true,
-        },
-      ])
-
-      setNuevoAlias('')
-      setNuevoIdentifier('')
-      setMensaje('¡Cuenta BinancePay agregada con éxito!')
+      setAlias('')
+      setIdentifier('')
+      fetchPasarelas()
     } catch (err: any) {
-      setMensaje('Error al agregar cuenta: ' + err.message)
-    } finally {
-      setGuardando(false)
+      setErrorMsg('Error al crear pasarela: ' + err.message)
     }
   }
 
-  const handleToggleEstado = async (id: string, estadoActual: boolean) => {
+  const toggleEstado = async (id: string, estadoActual: boolean) => {
     try {
       const { error } = await supabase
         .from('configuracion_pagos')
@@ -99,18 +66,14 @@ export default function ConfiguracionPagosAdminPage() {
         .eq('id', id)
 
       if (error) throw error
-
-      setCuentasBinance(
-        cuentasBinance.map((c) => (c.id === id ? { ...c, activa: !estadoActual } : c))
-      )
+      fetchPasarelas()
     } catch (err: any) {
       alert('Error al cambiar estado: ' + err.message)
     }
   }
 
-  const handleEliminarCuenta = async (id: string) => {
-    if (!confirm('¿Seguro que deseas eliminar esta cuenta de BinancePay?')) return
-
+  const eliminarPasarela = async (id: string) => {
+    if (!confirm('¿Estás seguro de eliminar este método de pago?')) return
     try {
       const { error } = await supabase
         .from('configuracion_pagos')
@@ -118,178 +81,115 @@ export default function ConfiguracionPagosAdminPage() {
         .eq('id', id)
 
       if (error) throw error
-
-      setCuentasBinance(cuentasBinance.filter((c) => c.id !== id))
+      fetchPasarelas()
     } catch (err: any) {
       alert('Error al eliminar: ' + err.message)
     }
   }
 
-  if (loading) {
-    return <div className="min-h-screen bg-zinc-950 text-zinc-400 flex items-center justify-center">Cargando configuración de pasarelas...</div>
-  }
-
   return (
-    <main className="min-h-screen bg-zinc-950 text-white p-4 sm:p-8">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-8">
+      <div>
+        <h1 className="text-2xl font-black">💳 Configuración de Pasarelas de Pago</h1>
+        <p className="text-xs text-zinc-400 mt-1">Agrega, activa, suspende o elimina métodos de pago en tiempo real para toda la plataforma.</p>
+      </div>
+
+      {/* Formulario para Agregar Nuevo Método */}
+      <form onSubmit={handleCrearPasarela} className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl space-y-4">
+        <h2 className="text-sm font-bold uppercase tracking-wider text-rose-500">➕ Agregar Nuevo Método de Pago</h2>
         
-        {/* Navegación superior */}
-        <div className="flex justify-between items-center border-b border-zinc-800 pb-4">
-          <Link href="/admin/dashboard" className="text-xs text-zinc-400 hover:text-white transition">
-            ← Volver al Panel de Admin
-          </Link>
-          <span className="text-xs bg-yellow-950 text-yellow-400 border border-yellow-800 px-3 py-1 rounded-full font-bold uppercase">
-            Configuración de Cobros
-          </span>
+        {errorMsg && <div className="bg-red-950/80 border border-red-600 text-red-200 p-3 rounded-xl text-xs">{errorMsg}</div>}
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-[10px] font-semibold text-zinc-400 uppercase mb-1">Tipo de Pasarela</label>
+            <select
+              value={tipoPasarela}
+              onChange={(e) => setTipoPasarela(e.target.value)}
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white focus:border-rose-600"
+            >
+              <option value="binance_pay">BinancePay</option>
+              <option value="ccbill">CCBill (Próximamente)</option>
+              <option value="nowpayments">NowPayments (Crypto)</option>
+              <option value="pago_movil">Pago Móvil</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-semibold text-zinc-400 uppercase mb-1">Alias Descriptivo</label>
+            <input
+              type="text"
+              required
+              placeholder="Ej. Binance Principal"
+              value={alias}
+              onChange={(e) => setAlias(e.target.value)}
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white focus:border-rose-600"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-semibold text-zinc-400 uppercase mb-1">Identificador / Cuenta (Pay ID / Wallet)</label>
+            <input
+              type="text"
+              required
+              placeholder="Ej. 123456789"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white focus:border-rose-600 font-mono"
+            />
+          </div>
         </div>
 
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black">Pasarelas y Cuentas de Cobro</h1>
-          <p className="text-xs sm:text-sm text-zinc-400 mt-1">Administra las direcciones de BinancePay donde los usuarios enviarán los pagos. Las demás pasarelas permanecen deshabilitadas.</p>
-        </div>
+        <button
+          type="submit"
+          className="bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 px-6 rounded-xl transition text-xs cursor-pointer shadow-lg shadow-rose-900/30"
+        >
+          Guardar Método de Pago
+        </button>
+      </form>
 
-        {mensaje && (
-          <div className={`p-4 rounded-xl text-sm ${mensaje.includes('Error') ? 'bg-red-950/80 border border-red-600 text-red-200' : 'bg-emerald-950/80 border border-emerald-600 text-emerald-200'}`}>
-            {mensaje}
+      {/* Listado de Métodos Existentes con Control de Estado */}
+      <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl space-y-4">
+        <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-300">📋 Métodos Registrados en Sistema</h2>
+
+        {loading ? (
+          <p className="text-xs text-zinc-500">Cargando métodos...</p>
+        लेक्ट्रonik : pasarelas.length === 0 ? (
+          <p className="text-xs text-zinc-500">No hay métodos de pago configurados.</p>
+        ) : (
+          <div className="space-y-3">
+            {pasarelas.map((p) => (
+              <div key={p.id} className="bg-zinc-950 border border-zinc-800 p-4 rounded-xl flex items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-white uppercase">{p.tipo_pasarela}</span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${p.activa ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-red-950 text-red-400 border border-red-800'}`}>
+                      {p.activa ? 'Activo' : 'Suspendido'}
+                    </span>
+                  </div>
+                  <h3 className="text-sm font-bold text-zinc-200 mt-1">{p.alias}</h3>
+                  <p className="text-xs text-zinc-500 font-mono mt-0.5">ID / Cuenta: {p.detalles?.identifier || 'N/A'}</p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => toggleEstado(p.id, p.activa)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${p.activa ? 'bg-zinc-800 hover:bg-zinc-700 text-yellow-400' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}`}
+                  >
+                    {p.activa ? 'Suspender' : 'Activar'}
+                  </button>
+                  <button
+                    onClick={() => eliminarPasarela(p.id)}
+                    className="px-3 py-1.5 bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-300 rounded-lg text-xs font-semibold transition cursor-pointer"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
-
-        {/* 1. SECCIÓN ACTIVA: BinancePay */}
-        <div className="bg-zinc-900 border border-yellow-600/30 rounded-2xl p-6 shadow-xl space-y-6">
-          <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">🟡</span>
-              <div>
-                <h2 className="text-lg font-bold text-yellow-400">BinancePay (Pasarela Activa)</h2>
-                <p className="text-xs text-zinc-400">Puedes habilitar múltiples cuentas/IDs para distribuir la recepción de pagos.</p>
-              </div>
-            </div>
-            <span className="text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800 px-2.5 py-1 rounded-full uppercase font-bold">
-              En Uso
-            </span>
-          </div>
-
-          {/* Formulario para agregar nueva cuenta BinancePay */}
-          <form onSubmit={handleAgregarCuentaBinance} className="bg-zinc-950 p-4 rounded-xl border border-zinc-800 space-y-3">
-            <h3 className="text-xs font-bold text-zinc-300 uppercase">+ Agregar Nueva Cuenta de BinancePay</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <input
-                type="text"
-                placeholder="Alias (ej. Cuenta Binance 1)"
-                value={nuevoAlias}
-                onChange={(e) => setNuevoAlias(e.target.value)}
-                className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-yellow-500"
-              />
-              <input
-                type="text"
-                required
-                placeholder="Correo BinancePay o Pay ID *"
-                value={nuevoIdentifier}
-                onChange={(e) => setNuevoIdentifier(e.target.value)}
-                className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-yellow-500"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={guardando}
-              className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold text-xs px-4 py-2 rounded-lg transition disabled:opacity-50"
-            >
-              {guardando ? 'Guardando...' : 'Guardar Cuenta BinancePay'}
-            </button>
-          </form>
-
-          {/* Listado de Cuentas Agregadas */}
-          <div className="space-y-3">
-            <h3 className="text-xs font-bold text-zinc-400 uppercase">Cuentas Registradas ({cuentasBinance.length})</h3>
-            
-            {cuentasBinance.length === 0 ? (
-              <p className="text-xs text-zinc-500 italic">No hay cuentas de BinancePay registradas aún.</p>
-            ) : (
-              <div className="divide-y divide-zinc-800">
-                {cuentasBinance.map((cuenta) => (
-                  <div key={cuenta.id} className="py-3 flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-white">{cuenta.alias}</span>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${cuenta.activa ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-zinc-800 text-zinc-500'}`}>
-                          {cuenta.activa ? 'Activa' : 'Inactiva'}
-                        </span>
-                      </div>
-                      <p className="text-xs text-yellow-400/90 font-mono mt-0.5">{cuenta.identifier}</p>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleToggleEstado(cuenta.id, cuenta.activa)}
-                        className="text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-3 py-1.5 rounded-lg transition"
-                      >
-                        {cuenta.activa ? 'Desactivar' : 'Activar'}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleEliminarCuenta(cuenta.id)}
-                        className="text-xs text-red-400 hover:text-red-300 px-2 py-1.5 font-bold"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* 2. SECCIONES DESHABILITADAS / TRANSPARENCIA */}
-        <div className="space-y-4">
-          <h2 className="text-sm font-bold text-zinc-500 uppercase tracking-wider">Otras Pasarelas (Deshabilitadas Temporalmente)</h2>
-
-          {/* Tarjetas de Crédito / CCBill */}
-          <div className="bg-zinc-900/40 border border-zinc-800 p-5 rounded-2xl opacity-50 pointer-events-none flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">💳</span>
-              <div>
-                <h3 className="font-bold text-sm text-zinc-300">CCBill / Tarjetas Internacionales</h3>
-                <p className="text-xs text-zinc-500">Procesamiento automático vía tarjeta de débito/crédito.</p>
-              </div>
-            </div>
-            <span className="text-xs bg-zinc-950 text-zinc-500 border border-zinc-800 px-3 py-1 rounded-full uppercase font-bold">
-              Deshabilitado
-            </span>
-          </div>
-
-          {/* NOWPayments */}
-          <div className="bg-zinc-900/40 border border-zinc-800 p-5 rounded-2xl opacity-50 pointer-events-none flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">🔷</span>
-              <div>
-                <h3 className="font-bold text-sm text-zinc-300">NOWPayments (Criptomonedas Altcoins)</h3>
-                <p className="text-xs text-zinc-500">Acepta USDT, BTC, ETH de múltiples redes.</p>
-              </div>
-            </div>
-            <span className="text-xs bg-zinc-950 text-zinc-500 border border-zinc-800 px-3 py-1 rounded-full uppercase font-bold">
-              Deshabilitado
-            </span>
-          </div>
-
-          {/* Pago Móvil Nacional */}
-          <div className="bg-zinc-900/40 border border-zinc-800 p-5 rounded-2xl opacity-50 pointer-events-none flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">🏦</span>
-              <div>
-                <h3 className="font-bold text-sm text-zinc-300">Pago Móvil / Transferencia Nacional</h3>
-                <p className="text-xs text-zinc-500">Transferencias bancarias locales.</p>
-              </div>
-            </div>
-            <span className="text-xs bg-zinc-950 text-zinc-500 border border-zinc-800 px-3 py-1 rounded-full uppercase font-bold">
-              Deshabilitado
-            </span>
-          </div>
-        </div>
-
       </div>
-    </main>
+    </div>
   )
 }

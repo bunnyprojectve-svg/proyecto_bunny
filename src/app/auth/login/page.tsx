@@ -10,6 +10,7 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [mostrarPassword, setMostrarPassword] = useState(false)
 
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
@@ -42,13 +43,10 @@ export default function LoginPage() {
 
       // Redirecciones estrictas según el rol:
       if (role === 'admin' || role === 'developer' || role === 'supervisor') {
-        // Redirige al dashboard de administración
         router.push('/admin/dashboard') 
       } else if (role === 'talent') {
-        // Redirige EXCLUSIVAMENTE a su propio dashboard de artista
         router.push('/talent/dashboard') 
       } else {
-        // Redirige al catálogo o panel del usuario estándar
         router.push('/catalogo') 
       }
 
@@ -98,14 +96,24 @@ export default function LoginPage() {
                 Contraseña *
               </label>
             </div>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-red-600 transition"
-            />
+            <div className="relative">
+              <input
+                type={mostrarPassword ? 'text' : 'password'}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 pr-12 text-sm text-white focus:outline-none focus:border-red-600 transition"
+              />
+              <button
+                type="button"
+                onClick={() => setMostrarPassword(!mostrarPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white text-xs font-bold px-2 py-1 transition cursor-pointer select-none"
+                title={mostrarPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+              >
+                {mostrarPassword ? '🙈' : '👁️'}
+              </button>
+            </div>
           </div>
 
           <button
