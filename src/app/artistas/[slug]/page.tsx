@@ -70,7 +70,11 @@ export default function ArtistaPerfilPage({ params }: Props) {
       const { data: packsData, error: packsError } = await supabase
         .from('packs')
         .select('*')
-        .eq('artista_id', artistaData.id); // <-- CORREGIDO: Filtro estricto por artista
+        .eq('artista_id', artistaData.id);
+
+      console.log("Artista actual ID:", artistaData.id);
+      console.log("Packs encontrados:", packsData);
+      console.log("Error de packs:", packsError);
 
       if (!packsError && packsData) {
         setPacks(packsData);
