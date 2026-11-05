@@ -10,13 +10,26 @@ interface Props {
   }>;
 }
 
+interface MetodoPago {
+  id: string;
+  tipo: string;
+  alias: string;
+  detalles: any;
+}
+
 export default function ArtistaPerfilPage({ params }: Props) {
   const [resolvedParams, setResolvedParams] = useState<{ slug: string } | null>(null);
   const [artista, setArtista] = useState<any>(null);
   const [packs, setPacks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Estados para el Modal de Pago Dinámico (Momento 2)
   const [mostrarModalPago, setMostrarModalPago] = useState(false);
   const [packSeleccionado, setPackSeleccionado] = useState<any>(null);
+  const [pasarelasActivas, setPasarelasActivas] = useState<MetodoPago[]>([]);
+  const [pasarelaSeleccionada, setPasarelaSeleccionada] = useState<MetodoPago | null>(null);
+  const [hashTransaccion, setHashTransaccion] = useState('');
+  const [procesandoPago, setProcesandoPago] = useState(false);
 
   useEffect(() => {
     params.then((p) => setResolvedParams(p));
@@ -25,6 +38,7 @@ export default function ArtistaPerfilPage({ params }: Props) {
   useEffect(() => {
     if (resolvedParams?.slug) {
       obtenerArtistaYContenido(resolvedParams.slug);
+      obtenerPasarelasActivas();
     }
   }, [resolvedParams]);
 
@@ -32,7 +46,7 @@ export default function ArtistaPerfilPage({ params }: Props) {
     try {
       setLoading(true);
 
-      // 1. Obtener la información de la artista desde Supabase
+      // 1. Obtener datos de la artista
       const { data: artistaData, error: artistaError } = await supabase
         .from('artistas')
         .select('*')
@@ -47,12 +61,12 @@ export default function ArtistaPerfilPage({ params }: Props) {
 
       setArtista(artistaData);
 
-      // 2. Registrar la visita al perfil (opcional según tu tabla perfil_visitas)
+      // 2. Registrar visita
       await supabase.from('perfil_visitas').insert({
         artista_slug: slugArtista,
       });
 
-      // 3. Obtener los packs disponibles creados por el administrador (limitado entre 4 y 8)
+      // 3. Obtener packs de la plataforma
       const { data: packsData, error: packsError } = await supabase
         .from('packs')
         .select('*')
@@ -68,6 +82,93 @@ export default function ArtistaPerfilPage({ params }: Props) {
       setLoading(false);
     }
   }
+
+  async function obtenerPasarelasActivas() {
+    try {
+      const { data, error } = await supabase
+        .from('configuracion_pagos')
+        .select('*')
+        .eq('activa', true);
+
+      if (!error && data) {
+        setPasarelasActivas(data);
+        if (data.length > 0) setPasarelaSeleccionada(data[0]);
+      }
+    } catch (err) {
+      console.error('Error al obtener pasarelas:', err);
+    }
+  }
+
+  // Lógica para packs con costo (> 0)
+  const handleConfirmarCompraPack = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!hashTransaccion.trim() || !packSeleccionado) return;
+
+    setProcesandoPago(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        alert('Debes iniciar sesión para adquirir un pack.');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('compras_packs')
+        .insert({
+          usuario_id: user.id,
+          pack_id: packSeleccionado.id,
+          pasarela_pago: pasarelaSeleccionada?.tipo || 'binance_pay',
+          id_transaccion_ext: hashTransaccion.trim(),
+          monto_pagado: packSeleccionado.precio,
+        });
+
+      if (error) throw error;
+
+      alert('¡Compra registrada con éxito! El pack ha sido habilitado en tu cuenta.');
+      setMostrarModalPago(false);
+      setHashTransaccion('');
+    } catch (err: any) {
+      alert('Error al procesar la compra: ' + err.message);
+    } finally {
+      setProcesandoPago(false);
+    }
+  };
+
+  // Lógica para el botón Adquirir (Diferenciando Precio 0 vs Pago)
+  const handleBotonAdquirir = async (pack: any) => {
+    const precioNumerico = Number(pack.precio);
+
+    if (precioNumerico === 0) {
+      // Reclamar pack gratuito
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          alert('Debes iniciar sesión para obtener este pack gratuito.');
+          return;
+        }
+
+        const { error } = await supabase
+          .from('compras_packs')
+          .insert({
+            usuario_id: user.id,
+            pack_id: pack.id,
+            pasarela_pago: 'gratis',
+            id_transaccion_ext: 'FREE-' + Date.now(),
+            monto_pagado: 0,
+          });
+
+        if (error) throw error;
+
+        alert('¡Pack gratuito reclamado con éxito! Revisa tu biblioteca.');
+      } catch (err: any) {
+        alert('Error al reclamar el pack: ' + err.message);
+      }
+    } else {
+      // Abrir modal de pago para packs con costo
+      setPackSeleccionado(pack);
+      setMostrarModalPago(true);
+    }
+  };
 
   if (loading) {
     return (
@@ -88,9 +189,7 @@ export default function ArtistaPerfilPage({ params }: Props) {
     );
   }
 
-  // Fotos de galería (hasta 4 adicionales)
   const galeriaFotos: string[] = artista.fotos_galeria || [];
-  // Video incrustado de Bunny Stream (almacenado en la columna video_destacado o similar)
   const videoBunnyUrl: string = artista.video_destacado || '';
 
   return (
@@ -159,7 +258,7 @@ export default function ArtistaPerfilPage({ params }: Props) {
           </div>
         )}
 
-        {/* 3. Galería de Fotos (Hasta 4 fotos adicionales de Bunny Stream / Almacenamiento) */}
+        {/* 3. Galería de Fotos */}
         {galeriaFotos.length > 0 && (
           <div className="bg-zinc-900 border border-zinc-800 p-6 sm:p-8 rounded-3xl shadow-xl space-y-4">
             <h2 className="text-lg font-bold">📸 Galería de Fotos ({galeriaFotos.length})</h2>
@@ -173,7 +272,7 @@ export default function ArtistaPerfilPage({ params }: Props) {
           </div>
         )}
 
-        {/* 4. Packs Disponibles creados por el Administrador (Entre 4 y 8) */}
+        {/* 4. Packs Disponibles */}
         <div className="space-y-6">
           <div className="flex justify-between items-center">
             <div>
@@ -188,60 +287,117 @@ export default function ArtistaPerfilPage({ params }: Props) {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {packs.map((pack) => (
-                <div key={pack.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-4 hover:border-zinc-700 transition">
-                  <div>
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider bg-rose-950 text-rose-400 border border-rose-800 px-2.5 py-0.5 rounded">
-                        {pack.incluye_videollamada ? '🎥 Incluye Videollamada' : '📦 Exclusivo'}
-                      </span>
-                      <span className="text-lg font-black text-emerald-400">${pack.precio} USD</span>
+              {packs.map((pack) => {
+                const esGratis = Number(pack.precio) === 0;
+                return (
+                  <div key={pack.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-4 hover:border-zinc-700 transition">
+                    <div>
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-rose-950 text-rose-400 border border-rose-800 px-2.5 py-0.5 rounded">
+                          {pack.incluye_videollamada ? '🎥 Incluye Videollamada' : '📦 Exclusivo'}
+                        </span>
+                        <span className={`text-lg font-black ${esGratis ? 'text-yellow-400' : 'text-emerald-400'}`}>
+                          {esGratis ? 'GRATIS 🎉' : `$${pack.precio} USD`}
+                        </span>
+                      </div>
+                      <h3 className="text-lg font-bold text-white">{pack.titulo}</h3>
+                      <p className="text-xs text-zinc-400 mt-2 line-clamp-3">{pack.descripcion}</p>
                     </div>
-                    <h3 className="text-lg font-bold text-white">{pack.titulo}</h3>
-                    <p className="text-xs text-zinc-400 mt-2 line-clamp-3">{pack.descripcion}</p>
-                  </div>
 
-                  <button
-                    onClick={() => {
-                      setPackSeleccionado(pack);
-                      setMostrarModalPago(true);
-                    }}
-                    className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl transition text-xs shadow-lg shadow-red-900/30"
-                  >
-                    Adquirir Pack 💳
-                  </button>
-                </div>
-              ))}
+                    <button
+                      onClick={() => handleBotonAdquirir(pack)}
+                      className={`w-full font-bold py-3 rounded-xl transition text-xs shadow-lg cursor-pointer ${
+                        esGratis
+                          ? 'bg-yellow-500 hover:bg-yellow-600 text-black shadow-yellow-900/20'
+                          : 'bg-red-600 hover:bg-red-700 text-white shadow-red-900/30'
+                      }`}
+                    >
+                      {esGratis ? 'Obtener Gratis 🎉' : 'Adquirir Pack 💳'}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
 
       </div>
 
-      {/* Modal de Simulación / Procesamiento de Pago */}
+      {/* Modal de Pago Dinámico para Packs (>0 USD) */}
       {mostrarModalPago && packSeleccionado && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-zinc-900 border border-zinc-800 max-w-md w-full rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl relative">
-            <h3 className="text-xl font-bold">Adquirir: {packSeleccionado.titulo}</h3>
-            <p className="text-xs text-zinc-400">Total a pagar: <strong className="text-emerald-400">${packSeleccionado.precio} USD</strong></p>
-            
-            <div className="space-y-3">
-              <button
-                onClick={() => {
-                  alert('¡Compra simulada con éxito! Revisa tu panel de usuario para acceder al contenido.');
-                  setMostrarModalPago(false);
-                }}
-                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl transition text-sm"
-              >
-                Confirmar Pago VIP
-              </button>
-              <button
-                onClick={() => setMostrarModalPago(false)}
-                className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold py-2.5 rounded-xl transition text-xs"
-              >
-                Cancelar
-              </button>
+            <div>
+              <span className="text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800 px-2.5 py-1 rounded-full uppercase font-bold">
+                Checkout de Pack
+              </span>
+              <h3 className="text-xl font-bold mt-2">{packSeleccionado.titulo}</h3>
+              <p className="text-xs text-zinc-400 mt-1">Total a pagar: <strong className="text-emerald-400">${packSeleccionado.precio} USD</strong></p>
             </div>
+
+            {/* Selector o Alerta de Pasarelas */}
+            {pasarelasActivas.length === 0 ? (
+              <div className="bg-red-950/60 border border-red-600/50 p-4 rounded-2xl text-center text-xs text-red-200">
+                ⚠️ Actualmente no hay pasarelas de pago activas. Por favor, intente de nuevo más tarde.
+              </div>
+            ) : (
+              <div className="space-y-3 bg-zinc-950 p-4 rounded-2xl border border-zinc-800">
+                <label className="block text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">Pasarela Disponible:</label>
+                <div className="flex gap-2">
+                  {pasarelasActivas.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setPasarelaSeleccionada(p)}
+                      className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold uppercase transition border ${pasarelaSeleccionada?.id === p.id ? 'bg-yellow-500 text-black border-yellow-400' : 'bg-zinc-900 text-zinc-400 border-zinc-800'}`}
+                    >
+                      {p.tipo.replace('_', ' ')}
+                    </button>
+                  ))}
+                </div>
+
+                {pasarelaSeleccionada?.tipo === 'binance_pay' && (
+                  <div className="space-y-1 pt-2 border-t border-zinc-800 text-xs">
+                    <span className="text-zinc-400">Cuenta de destino ({pasarelaSeleccionada.alias}):</span>
+                    <div className="font-mono text-yellow-400 font-bold">{pasarelaSeleccionada.detalles?.identifier}</div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <form onSubmit={handleConfirmarCompraPack} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
+                  ID de Transacción / Hash *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej. 82374910293847"
+                  value={hashTransaccion}
+                  onChange={(e) => setHashTransaccion(e.target.value)}
+                  disabled={pasarelasActivas.length === 0}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-yellow-500 font-mono disabled:opacity-50"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <button
+                  type="submit"
+                  disabled={procesandoPago || pasarelasActivas.length === 0}
+                  className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl transition text-sm cursor-pointer disabled:opacity-50"
+                >
+                  {procesandoPago ? 'Registrando...' : 'Confirmar Pago del Pack'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMostrarModalPago(false)}
+                  className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold py-2.5 rounded-xl transition text-xs cursor-pointer"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
