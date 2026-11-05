@@ -42,7 +42,7 @@ export default function AdminConfigPagosPage() {
       const { error } = await supabase
         .from('configuracion_pagos')
         .insert({
-          tipo_pasarela: tipoPasarela,
+          tipo: tipoPasarela,
           alias,
           activa: true,
           detalles: { identifier }
@@ -154,7 +154,7 @@ export default function AdminConfigPagosPage() {
 
         {loading ? (
           <p className="text-xs text-zinc-500">Cargando métodos...</p>
-        लेक्ट्रonik : pasarelas.length === 0 ? (
+        ) : pasarelas.length === 0 ? (
           <p className="text-xs text-zinc-500">No hay métodos de pago configurados.</p>
         ) : (
           <div className="space-y-3">
@@ -162,7 +162,7 @@ export default function AdminConfigPagosPage() {
               <div key={p.id} className="bg-zinc-950 border border-zinc-800 p-4 rounded-xl flex items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-white uppercase">{p.tipo_pasarela}</span>
+                    <span className="text-xs font-bold text-white uppercase">{p.tipo || p.tipo_pasarela}</span>
                     <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${p.activa ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-red-950 text-red-400 border border-red-800'}`}>
                       {p.activa ? 'Activo' : 'Suspendido'}
                     </span>
