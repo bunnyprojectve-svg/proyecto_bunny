@@ -1,183 +1,128 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { supabase } from '@/lib/supabaseClient'
-
-interface PackComprado {
-  id: string
-  fecha_compra: string
-  estado: string
-  pack: {
-    id: string
-    titulo: string
-    precio: number
-    descripcion: string
-    incluye_videollamada: boolean
-  }
-}
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabaseClient';
+import Link from 'next/link';
 
 export default function UserDashboardPage() {
-  const [loading, setLoading] = useState(true)
-  const [puntos, setPuntos] = useState<number>(0)
-  const [nombreUsuario, setNombreUsuario] = useState<string>('')
-  const [compras, setCompras] = useState<PackComprado[]>([])
+  const [compras, setCompras] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchUserData()
-  }, [])
+    obtenerMisPacks();
+  }, []);
 
-  const fetchUserData = async () => {
+  async function obtenerMisPacks() {
     try {
-      // 1. Obtener sesión del usuario actual
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      if (authError || !user) return
-
-      // 2. Obtener datos del perfil y puntos desde la tabla 'profiles'
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('full_name, puntos')
-        .eq('id', user.id)
-        .single()
-
-      if (profile) {
-        setNombreUsuario(profile.full_name || user.email?.split('@')[0] || 'Usuario')
-        setPuntos(profile.puntos || 0)
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        setLoading(false);
+        return;
       }
 
-      // 3. Obtener los packs comprados desde la tabla 'compras_packs'
-      const { data: comprasData, error: comprasError } = await supabase
+      // Consultar las compras del usuario y traer la información de los packs y su contenido
+      const { data, error } = await supabase
         .from('compras_packs')
         .select(`
           id,
-          fecha_compra,
-          estado:st_transaccion_ext,
-          pack:pack_id (
+          fecha_expiracion,
+          packs (
             id,
             titulo,
-            precio,
             descripcion,
-            incluye_videollamada
+            precio,
+            artistas (nombre, slug)
           )
         `)
-        .eq('usuario_id', user.id)
-        .order('fecha_compra', { ascending: false })
+        .eq('usuario_id', user.id);
 
-      if (!comprasError && comprasData) {
-        setCompras(comprasData as unknown as PackComprado[])
+      if (!error && data) {
+        setCompras(data);
       }
-
     } catch (err) {
-      console.error('Error al cargar datos del usuario:', err)
+      console.error('Error al cargar la biblioteca:', err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-zinc-950 text-zinc-400 flex items-center justify-center p-6">
-        Cargando tus datos y compras...
+      <div className="min-h-screen bg-zinc-950 text-zinc-400 flex items-center justify-center">
+        Cargando tu biblioteca exclusiva...
       </div>
-    )
+    );
   }
 
   return (
     <main className="min-h-screen bg-zinc-950 text-white p-4 sm:p-8">
       <div className="max-w-5xl mx-auto space-y-8">
         
-        {/* Encabezado Principal */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        {/* Cabecera del Panel */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-xl">
           <div>
-            <span className="text-xs font-bold uppercase tracking-widest text-red-500 bg-red-950/50 border border-red-800 px-3 py-1 rounded-full">
-              Panel de Suscriptor
+            <span className="bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] font-bold px-3 py-1 rounded-full uppercase">
+              Biblioteca Personal 🐰
             </span>
-            <h1 className="text-2xl font-black tracking-tight mt-2">Bienvenido, {nombreUsuario}</h1>
-            <p className="text-zinc-400 text-sm mt-1">Gestiona tus puntos y accede al contenido exclusivo que has adquirido.</p>
+            <h1 className="text-2xl font-bold mt-2">Mis Packs Exclusivos Adquiridos</h1>
+            <p className="text-zinc-400 text-xs mt-1">Aquí puedes visualizar todo el contenido multimedia desbloqueado por 30 días.</p>
           </div>
           <Link
-            href="/catalogo"
-            className="bg-red-600 hover:bg-red-700 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition shadow-lg shadow-red-900/40 shrink-0"
+            href="/"
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-lg"
           >
-            ✨ Explorar Catálogo
+            ← Volver al Catálogo
           </Link>
         </div>
 
-        {/* Tarjetas de Resumen Reales */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl shadow-xl">
-            <h3 className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">Puntos Acumulados</h3>
-            <p className="text-3xl font-black text-yellow-400 mt-2">💎 {puntos} Pts</p>
-            <span className="text-xs text-zinc-500 mt-1 block">Canjeables en tus próximas compras</span>
+        {/* Listado de Compras / Packs Activos */}
+        {compras.length === 0 ? (
+          <div className="bg-zinc-900 border border-zinc-800 p-12 rounded-2xl text-center space-y-4">
+            <p className="text-zinc-400 text-sm">Aún no has adquirido ningún pack exclusivo.</p>
+            <Link
+              href="/"
+              className="inline-block bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-xl text-xs font-bold transition border border-zinc-700"
+            >
+              Explorar Artistas y Packs
+            </Link>
           </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {compras.map((compra) => {
+              const pack = compra.packs;
+              if (!pack) return null;
 
-          <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl shadow-xl">
-            <h3 className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">Packs Adquiridos</h3>
-            <p className="text-3xl font-black text-white mt-2">📦 {compras.length} Packs</p>
-            <span className="text-xs text-zinc-500 mt-1 block">Acceso disponible a tu contenido</span>
-          </div>
-
-          <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl shadow-xl">
-            <h3 className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">Estado de Cuenta</h3>
-            <p className="text-3xl font-black text-emerald-400 mt-2">🟢 Activa</p>
-            <span className="text-xs text-zinc-500 mt-1 block">Acceso VIP a la plataforma</span>
-          </div>
-        </div>
-
-        {/* Sección de Packs Adquiridos con Botones de Acceso */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-xl">
-          <h2 className="text-xl font-bold mb-4">Tus Packs de Contenido Adquiridos</h2>
-          
-          {compras.length === 0 ? (
-            <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-8 text-center text-zinc-400 space-y-3">
-              <p className="text-base">Aún no has comprado ningún pack de contenido.</p>
-              <Link 
-                href="/catalogo" 
-                className="inline-block text-sm font-semibold text-red-400 hover:text-red-300 underline"
-              >
-                Ir al catálogo de artistas para realizar tu primera compra →
-              </Link>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {compras.map((item) => (
-                <div 
-                  key={item.id} 
-                  className="bg-zinc-950 border border-zinc-800 p-5 rounded-xl flex flex-col justify-between space-y-4 hover:border-zinc-700 transition"
-                >
+              return (
+                <div key={compra.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-4">
                   <div>
-                    <div className="flex justify-between items-start gap-2 mb-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-950 text-emerald-400 border border-emerald-800 px-2 py-0.5 rounded">
-                        {item.estado || 'Completado'}
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider bg-rose-950 text-rose-400 border border-rose-800 px-2.5 py-0.5 rounded">
+                        Creadora: {pack.artistas?.nombre || 'Artista'}
                       </span>
-                      <span className="text-xs text-zinc-500 font-mono">
-                        {item.fecha_compra ? new Date(item.fecha_compra).toLocaleDateString() : ''}
+                      <span className="text-[10px] text-zinc-400 font-mono">
+                        Expira: {new Date(compra.fecha_expiracion).toLocaleDateString()}
                       </span>
                     </div>
 
-                    <h3 className="font-bold text-lg text-white">
-                      {item.pack?.titulo || 'Pack Exclusivo'}
-                    </h3>
-
-                    <p className="text-xs text-zinc-400 mt-1 line-clamp-2">
-                      {item.pack?.descripcion || 'Contenido multimedia exclusivo.'}
-                    </p>
+                    <h3 className="text-xl font-bold text-white mt-1">{pack.titulo}</h3>
+                    <p className="text-xs text-zinc-400 mt-2 leading-relaxed">{pack.descripcion}</p>
                   </div>
 
-                  {/* Botón de Acceso al Contenido del Pack */}
-                  <Link
-                    href={`/perfil/compras/${item.id}`}
-                    className="w-full text-center bg-red-600 hover:bg-red-700 text-white font-bold text-xs py-2.5 px-4 rounded-lg transition shadow-md shadow-red-900/30"
-                  >
-                    🔓 Ver Contenido del Pack (Fotos y Videos)
-                  </Link>
+                  <div className="pt-4 border-t border-zinc-800">
+                    <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-800 text-center space-y-2">
+                      <p className="text-xs text-emerald-400 font-semibold">✓ Contenido Desbloqueado y Activo</p>
+                      <p className="text-[11px] text-zinc-500">Disfruta de las fotos y videos exclusivos de este pack en alta definición.</p>
+                    </div>
+                  </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              );
+            })}
+          </div>
+        )}
 
       </div>
     </main>
-  )
+  );
 }
