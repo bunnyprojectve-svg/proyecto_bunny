@@ -57,7 +57,7 @@ export default function UserDashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-white p-4 sm:p-8">
+    <main className="min-h-screen bg-zinc-950 text-white p-4 sm:p-8 w-full">
       <div className="max-w-5xl mx-auto space-y-8">
         
         {/* Cabecera del Panel */}
@@ -70,7 +70,7 @@ export default function UserDashboardPage() {
             <p className="text-zinc-400 text-xs mt-1">Aquí puedes visualizar todo el contenido multimedia desbloqueado por 30 días.</p>
           </div>
           <Link
-            href="/"
+            href="/catalogo"
             className="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-lg"
           >
             ← Volver al Catálogo
@@ -82,7 +82,7 @@ export default function UserDashboardPage() {
           <div className="bg-zinc-900 border border-zinc-800 p-12 rounded-2xl text-center space-y-4">
             <p className="text-zinc-400 text-sm">Aún no has adquirido ningún pack exclusivo.</p>
             <Link
-              href="/"
+              href="/catalogo"
               className="inline-block bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-xl text-xs font-bold transition border border-zinc-700"
             >
               Explorar Artistas y Packs
@@ -110,11 +110,18 @@ export default function UserDashboardPage() {
                     <p className="text-xs text-zinc-400 mt-2 leading-relaxed">{pack.descripcion}</p>
                   </div>
 
-                  <div className="pt-4 border-t border-zinc-800">
-                    <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-800 text-center space-y-2">
+                  <div className="pt-4 border-t border-zinc-800 space-y-3">
+                    <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800 text-center">
                       <p className="text-xs text-emerald-400 font-semibold">✓ Contenido Desbloqueado y Activo</p>
-                      <p className="text-[11px] text-zinc-500">Disfruta de las fotos y videos exclusivos de este pack en alta definición.</p>
                     </div>
+
+                    {/* Enlace corregido apuntando al id de la compra */}
+                    <Link
+                      href={`/perfil/compras/${compra.id}`}
+                      className="block w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl transition text-xs text-center shadow-lg cursor-pointer"
+                    >
+                      Ver Contenido del Pack 🔓
+                    </Link>
                   </div>
                 </div>
               );

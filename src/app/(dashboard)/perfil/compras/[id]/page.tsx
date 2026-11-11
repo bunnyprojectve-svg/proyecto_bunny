@@ -1,55 +1,56 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { supabase } from '@/lib/supabaseClient'
+import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { supabase } from '@/lib/supabaseClient';
 
 interface ContenidoItem {
-  id: string
-  tipo: 'foto' | 'video'
-  recurso_url: string
-  orden: number
+  id: string;
+  tipo: 'foto' | 'video';
+  recurso_url: string;
+  orden: number;
 }
 
 interface PackDetalle {
-  id: string
-  titulo: string
-  descripcion: string
-  incluye_videollamada: boolean
+  id: string;
+  titulo: string;
+  descripcion: string;
+  incluye_videollamada: boolean;
 }
 
 interface CompraDetalle {
-  id: string
-  fecha_compra: string
-  pack: PackDetalle
+  id: string;
+  fecha_compra: string;
+  pack: PackDetalle;
 }
 
 export default function VerContenidoPackPage() {
-  const params = useParams()
-  const router = useRouter()
-  const compraId = params?.id as string
+  const params = useParams();
+  const router = useRouter();
+  const compraId = params?.id as string;
 
-  const [loading, setLoading] = useState(true)
-  const [compra, setCompra] = useState<CompraDetalle | null>(null)
-  const [contenidos, setContenidos] = useState<ContenidoItem[]>([])
-  const [errorAcceso, setErrorAcceso] = useState(false)
+  const [loading, setLoading] = useState(true);
+  const [compra, setCompra] = useState<CompraDetalle | null>(null);
+  const [contenidos, setContenidos] = useState<ContenidoItem[]>([]);
+  const [errorAcceso, setErrorAcceso] = useState(false);
 
   useEffect(() => {
     if (compraId) {
-      fetchContenidoPack()
+      fetchContenidoPack();
     }
-  }, [compraId])
+  }, [compraId]);
 
   const fetchContenidoPack = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        router.push('/auth/login')
-        return
+        router.push('/auth/login');
+        return;
       }
 
-      // 1. Verificar que la compra pertenezca al usuario actual y traer info del pack
+      // 1. Verificar que la compra pertenezca al usuario actual usando el ID de la compra
       const { data: compraData, error: compraError } = await supabase
         .from('compras_packs')
         .select(`
@@ -64,61 +65,61 @@ export default function VerContenidoPackPage() {
           )
         `)
         .eq('id', compraId)
-        .single()
+        .single();
 
       if (compraError || !compraData || compraData.usuario_id !== user.id) {
-        setErrorAcceso(true)
-        setLoading(false)
-        return
+        setErrorAcceso(true);
+        setLoading(false);
+        return;
       }
 
-      setCompra(compraData as unknown as CompraDetalle)
+      setCompra(compraData as unknown as CompraDetalle);
 
-      // 2. Traer los elementos multimedia de la tabla 'pack_contenido'
-      const packId = (compraData.pack as any)?.id
+      // 2. Traer los elementos multimedia de la tabla 'pack_contenido' usando el pack_id
+      const packId = (compraData.pack as any)?.id;
       if (packId) {
         const { data: contenidoData, error: contenidoError } = await supabase
           .from('pack_contenido')
           .select('id, tipo, recurso_url, orden')
           .eq('pack_id', packId)
-          .order('orden', { ascending: true })
+          .order('orden', { ascending: true });
 
         if (!contenidoError && contenidoData) {
-          setContenidos(contenidoData as ContenidoItem[])
+          setContenidos(contenidoData as ContenidoItem[]);
         }
       }
 
     } catch (err) {
-      console.error('Error al cargar contenido:', err)
-      setErrorAcceso(true)
+      console.error('Error al cargar contenido:', err);
+      setErrorAcceso(true);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   if (loading) {
-    return <div className="min-h-screen bg-zinc-950 text-zinc-400 flex items-center justify-center">Verificando acceso al contenido...</div>
+    return <div className="min-h-screen bg-zinc-950 text-zinc-400 flex items-center justify-center">Verificando acceso al contenido...</div>;
   }
 
   if (errorAcceso || !compra) {
     return (
-      <main className="min-h-screen bg-zinc-950 text-white p-8 flex items-center justify-center">
-        <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-2xl max-w-md text-center space-y-4">
+      <main className="min-h-screen bg-zinc-950 text-white p-8 flex items-center justify-center w-full">
+        <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-2xl max-w-md text-center space-y-4 shadow-2xl">
           <h1 className="text-xl font-bold text-red-500">Acceso Denegado</h1>
           <p className="text-sm text-zinc-400">No tienes permisos para ver este contenido o la compra no existe.</p>
-          <Link href="/perfil" className="inline-block bg-zinc-800 text-white text-xs font-bold px-4 py-2 rounded-xl">
+          <Link href="/perfil" className="inline-block bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition">
             ← Volver a mi Panel
           </Link>
         </div>
       </main>
-    )
+    );
   }
 
-  const fotos = contenidos.filter(c => c.tipo === 'foto')
-  const videos = contenidos.filter(c => c.tipo === 'video')
+  const fotos = contenidos.filter(c => c.tipo === 'foto');
+  const videos = contenidos.filter(c => c.tipo === 'video');
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-white p-4 sm:p-8">
+    <main className="min-h-screen bg-zinc-950 text-white p-4 sm:p-8 w-full">
       <div className="max-w-5xl mx-auto space-y-8">
         
         {/* Barra de Navegación superior */}
@@ -169,7 +170,7 @@ export default function VerContenidoPackPage() {
           </div>
         )}
 
-        {/* Sección de Videos (Bunny Stream / URLs) */}
+        {/* Sección de Videos */}
         {videos.length > 0 && (
           <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl shadow-xl space-y-4">
             <h2 className="text-lg font-bold">🎬 Videos Exclusivos ({videos.length})</h2>
@@ -177,7 +178,6 @@ export default function VerContenidoPackPage() {
               {videos.map((video) => (
                 <div key={video.id} className="rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 p-3 space-y-2">
                   <div className="aspect-video w-full bg-black rounded-lg overflow-hidden flex items-center justify-center">
-                    {/* Si usas iframe de Bunny Stream o video nativo */}
                     <iframe 
                       src={video.recurso_url} 
                       loading="lazy" 
@@ -201,5 +201,5 @@ export default function VerContenidoPackPage() {
 
       </div>
     </main>
-  )
+  );
 }
