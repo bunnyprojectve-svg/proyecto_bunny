@@ -4,6 +4,9 @@ import { useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
+// Ajustamos la ruta relativa para importar el fondo desde src/app/
+import fondoLanding from '../landing-bg.webp'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -57,8 +60,25 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-white flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-6 sm:p-8 shadow-2xl">
+    <main className="min-h-screen bg-zinc-950 text-white flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      
+      {/* Fondo estático nítido compartido con la landing page */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <Image
+          src={fondoLanding} 
+          alt="Fondo Bunny Platform"
+          fill
+          priority
+          className="object-cover object-center opacity-75 scale-100"
+        />
+      </div>
+
+      {/* Sutil capa oscura para mantener contraste */}
+      <div className="absolute inset-0 z-0 bg-zinc-950/40 pointer-events-none" />
+
+      {/* Tarjeta del Formulario con efecto Translúcido (Glassmorphism) */}
+      <div className="relative z-10 max-w-md w-full bg-zinc-950/75 border border-zinc-800/80 rounded-3xl p-6 sm:p-8 backdrop-blur-md shadow-2xl">
+        
         <div className="bg-red-950/60 border border-red-600/40 p-2.5 rounded-xl mb-6 text-center text-xs text-red-200">
           ⚠️ <strong>Sitio Exclusivo +18:</strong> Acceso a la Plataforma.
         </div>
@@ -118,14 +138,14 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-red-900/20 text-sm cursor-pointer disabled:opacity-50 mt-4"
+            className="w-full bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-red-950/60 text-sm cursor-pointer disabled:opacity-50 mt-4 uppercase tracking-wider"
           >
             {loading ? 'Autenticando...' : 'Acceder a mi cuenta'}
           </button>
         </form>
 
         <div className="mt-6 text-center border-t border-zinc-800 pt-4">
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-zinc-400">
             ¿No tienes cuenta?{' '}
             <Link href="/auth/registro-usuario" className="text-red-500 font-semibold hover:underline">
               Registrarme como Usuario
