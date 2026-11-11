@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
+// Importación directa del archivo guardado en src/app/
+import fondoLanding from './landing-bg.webp'
 
 export default function LandingPage() {
   const [mostrarModalEdad, setMostrarModalEdad] = useState(true)
@@ -25,14 +28,19 @@ export default function LandingPage() {
   return (
     <main className="min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
       
-      {/* Imagen de Fondo Estática Optimizada */}
-      <div 
-        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-40 scale-105 filter blur-[2px]"
-        style={{ backgroundImage: "url('/landing-bg.webp')" }}
-      />
+      {/* Fondo estático importado localmente */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <Image
+          src={fondoLanding} 
+          alt="Fondo Bunny Platform"
+          fill
+          priority
+          className="object-cover object-center opacity-40 scale-105 filter blur-[2px]"
+        />
+      </div>
 
       {/* Capa de Oscurecimiento para contraste y legibilidad del texto */}
-      <div className="absolute inset-0 z-0 bg-gradient-to-b from-zinc-950/80 via-zinc-950/70 to-zinc-950" />
+      <div className="absolute inset-0 z-0 bg-gradient-to-b from-zinc-950/80 via-zinc-950/70 to-zinc-950 pointer-events-none" />
 
       {/* Contenido de Presentación de la Landing Page */}
       <div className={`relative z-10 max-w-2xl mx-auto space-y-6 transition duration-300 ${mostrarModalEdad ? 'blur-md select-none pointer-events-none' : ''}`}>
