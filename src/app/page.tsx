@@ -6,7 +6,6 @@ import Link from 'next/link'
 export default function LandingPage() {
   const [mostrarModalEdad, setMostrarModalEdad] = useState(true)
 
-  // Opcional: Recordar si ya aceptó la mayoría de edad en esta sesión
   useEffect(() => {
     const esMayor = sessionStorage.getItem('bunny_edad_verificada')
     if (esMayor === 'true') {
@@ -26,12 +25,21 @@ export default function LandingPage() {
   return (
     <main className="min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
       
+      {/* Imagen de Fondo Estática Optimizada */}
+      <div 
+        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-40 scale-105 filter blur-[2px]"
+        style={{ backgroundImage: "url('/landing-bg.jpg')" }}
+      />
+
+      {/* Capa de Oscurecimiento para contraste y legibilidad del texto */}
+      <div className="absolute inset-0 z-0 bg-gradient-to-b from-zinc-950/80 via-zinc-950/70 to-zinc-950" />
+
       {/* Contenido de Presentación de la Landing Page */}
-      <div className={`max-w-2xl mx-auto space-y-6 transition duration-300 ${mostrarModalEdad ? 'blur-md select-none pointer-events-none' : ''}`}>
-        <h2 className="text-4xl sm:text-5xl font-black tracking-tight">
+      <div className={`relative z-10 max-w-2xl mx-auto space-y-6 transition duration-300 ${mostrarModalEdad ? 'blur-md select-none pointer-events-none' : ''}`}>
+        <h2 className="text-4xl sm:text-5xl font-black tracking-tight drop-shadow-lg">
           Contenido Exclusivo y Conexiones en Vivo
         </h2>
-        <p className="text-zinc-400 text-sm sm:text-base leading-relaxed">
+        <p className="text-zinc-300 text-sm sm:text-base leading-relaxed drop-shadow">
           Descubre los perfiles de nuestros talentos verificados, adquiere packs exclusivos con vigencia de 30 días y disfruta de transmisiones en streaming de alta calidad.
         </p>
         
@@ -39,7 +47,7 @@ export default function LandingPage() {
         <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
           <Link
             href="/auth/login"
-            className="inline-block bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-xl transition text-sm cursor-pointer shadow-lg shadow-red-900/30"
+            className="inline-block bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-xl transition text-sm cursor-pointer shadow-xl shadow-red-950"
           >
             Acceder a la Plataforma
           </Link>
