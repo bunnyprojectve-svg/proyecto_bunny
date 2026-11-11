@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 // Ajustamos la ruta relativa para importar el fondo desde src/app/
-import fondoLanding from '../landing-bg.webp'
+import fondoLanding from '../../landing-bg.webp'
 
 export default function LoginPage() {
   const router = useRouter()
