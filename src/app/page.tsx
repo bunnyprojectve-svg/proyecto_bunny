@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-// Importación directa del archivo guardado en src/app/
 import fondoLanding from './landing-bg.webp'
 
 export default function LandingPage() {
@@ -28,34 +27,34 @@ export default function LandingPage() {
   return (
     <main className="min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
       
-      {/* Fondo estático importado localmente */}
+      {/* Fondo nítido: Subimos la opacidad y quitamos el blur pesado para que se distinga el collage */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         <Image
           src={fondoLanding} 
           alt="Fondo Bunny Platform"
           fill
           priority
-          className="object-cover object-center opacity-40 scale-105 filter blur-[2px]"
+          className="object-cover object-center opacity-75 scale-100"
         />
       </div>
 
-      {/* Capa de Oscurecimiento para contraste y legibilidad del texto */}
-      <div className="absolute inset-0 z-0 bg-gradient-to-b from-zinc-950/80 via-zinc-950/70 to-zinc-950 pointer-events-none" />
+      {/* Sutil capa oscura general pero mucho más ligera para no apagar los colores */}
+      <div className="absolute inset-0 z-0 bg-zinc-950/40 pointer-events-none" />
 
-      {/* Contenido de Presentación de la Landing Page */}
-      <div className={`relative z-10 max-w-2xl mx-auto space-y-6 transition duration-300 ${mostrarModalEdad ? 'blur-md select-none pointer-events-none' : ''}`}>
-        <h2 className="text-4xl sm:text-5xl font-black tracking-tight drop-shadow-lg">
+      {/* Contenedor tipo Tarjeta Translúcida (Glassmorphism) para el texto y el botón */}
+      <div className={`relative z-10 max-w-2xl mx-auto p-8 sm:p-10 bg-zinc-950/75 border border-zinc-800/80 rounded-3xl backdrop-blur-md shadow-2xl space-y-6 transition duration-300 ${mostrarModalEdad ? 'blur-md select-none pointer-events-none' : ''}`}>
+        <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white drop-shadow-md">
           Contenido Exclusivo y Conexiones en Vivo
         </h2>
-        <p className="text-zinc-300 text-sm sm:text-base leading-relaxed drop-shadow">
+        <p className="text-zinc-300 text-sm sm:text-base leading-relaxed">
           Descubre los perfiles de nuestros talentos verificados, adquiere packs exclusivos con vigencia de 30 días y disfruta de transmisiones en streaming de alta calidad.
         </p>
         
-        {/* Botón de redirección directa a la página de login */}
-        <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
+        {/* Botón de acceso directo */}
+        <div className="flex flex-col sm:flex-row justify-center gap-4 pt-2">
           <Link
             href="/auth/login"
-            className="inline-block bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-xl transition text-sm cursor-pointer shadow-xl shadow-red-950"
+            className="inline-block bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 px-8 rounded-xl transition text-sm cursor-pointer shadow-lg shadow-red-950/60 uppercase tracking-wider"
           >
             Acceder a la Plataforma
           </Link>
