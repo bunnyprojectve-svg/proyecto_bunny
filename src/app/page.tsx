@@ -74,13 +74,7 @@ export default function LandingPage() {
           >
             Acceder a la Plataforma
           </button>
-          <button
-            onClick={() => router.push('/auth/registro-usuario')}
-            className="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 font-medium py-3 px-8 rounded-xl border border-zinc-800 transition text-sm flex items-center justify-center cursor-pointer"
-          >
-            Registrarse
-          </button>
-        </div>
+         </div>
       </div>
 
       {/* Modal Emergente de Login */}
