@@ -28,7 +28,7 @@ export default function LandingPage() {
       {/* Imagen de Fondo Estática Optimizada */}
       <div 
         className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-40 scale-105 filter blur-[2px]"
-        style={{ backgroundImage: "url('/landing-bg.jpg')" }}
+        style={{ backgroundImage: "url('/landing-bg.webp')" }}
       />
 
       {/* Capa de Oscurecimiento para contraste y legibilidad del texto */}
